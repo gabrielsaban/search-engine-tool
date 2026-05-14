@@ -170,8 +170,8 @@ pytest --cov=src --cov-report=term-missing --cov-fail-under=85
 Current local result:
 
 ```text
-44 passed
-coverage: 98.78%
+51 passed
+coverage: 96.40%
 ```
 
 The test suite covers tokenisation, indexing, storage, corrupt index handling, search ranking, CLI flows, mocked crawler behaviour, and synthetic corpus search. Live crawling is kept out of CI so tests remain fast and deterministic.
@@ -181,6 +181,7 @@ The test suite covers tokenisation, indexing, storage, corrupt index handling, s
 - [Crawler design](docs/crawler-design.md)
 - [Indexing design](docs/indexing-design.md)
 - [Search design](docs/search-design.md)
+- [Search research and rationale](docs/SEARCH_RESEARCH.md)
 - [CLI design](docs/cli-design.md)
 - [Quality checklist](docs/quality-checklist.md)
 
