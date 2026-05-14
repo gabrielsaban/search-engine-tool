@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from crawler import CrawlConfig, CrawlResult, crawl_site
-from indexer import SearchIndex, build_index, load_index, save_index
+from indexer import IndexLoadError, SearchIndex, build_index, load_index, save_index
 from search import find_pages, format_postings, format_search_results
 
 DEFAULT_INDEX_PATH = Path("data/index.json")
@@ -81,7 +81,11 @@ class SearchShell:
         if not self.index_path.exists():
             return [f"No index file found at {self.index_path}."]
 
-        self.search_index = load_index(self.index_path)
+        try:
+            self.search_index = load_index(self.index_path)
+        except IndexLoadError as exc:
+            return [f"Could not load index from {self.index_path}: {exc}."]
+
         return [
             f"Loaded index from {self.index_path}.",
             f"Index contains {len(self.search_index.inverted_index)} unique term(s) "
