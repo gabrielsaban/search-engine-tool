@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from indexer import (
+from src.indexer import (
     Document,
     IndexLoadError,
     SearchIndex,

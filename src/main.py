@@ -7,9 +7,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from crawler import CrawlConfig, CrawlResult, crawl_site
-from indexer import IndexLoadError, SearchIndex, build_index, load_index, save_index
-from search import find_pages, format_postings, format_search_results, suggest_terms
+from src.crawler import CrawlConfig, CrawlResult, crawl_site
+from src.indexer import IndexLoadError, SearchIndex, build_index, load_index, save_index
+from src.search import find_pages, format_postings, format_search_results, suggest_terms
 
 DEFAULT_INDEX_PATH = Path("data/index.json")
 

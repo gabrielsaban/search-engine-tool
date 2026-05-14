@@ -9,13 +9,13 @@ either the committed index or a deterministic synthetic corpus.
 Saved index benchmark:
 
 ```bash
-PYTHONPATH=src python3 benchmarks/search_benchmark.py --source saved
+python3 benchmarks/search_benchmark.py --source saved
 ```
 
 Synthetic benchmark:
 
 ```bash
-PYTHONPATH=src python3 benchmarks/search_benchmark.py \
+python3 benchmarks/search_benchmark.py \
   --source synthetic \
   --documents 500 \
   --terms-per-document 120 \
@@ -25,7 +25,7 @@ PYTHONPATH=src python3 benchmarks/search_benchmark.py \
 Custom query benchmark:
 
 ```bash
-PYTHONPATH=src python3 benchmarks/search_benchmark.py \
+python3 benchmarks/search_benchmark.py \
   --source saved \
   --query "good friends" \
   --query '"good friends"'

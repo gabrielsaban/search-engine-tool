@@ -34,7 +34,7 @@ The project is tested with Python 3.12 in CI.
 Start the interactive shell:
 
 ```bash
-PYTHONPATH=src python src/main.py
+python3 -m src.main
 ```
 
 The default index path is `data/index.json`.
@@ -84,7 +84,7 @@ Running `build` with default settings performs a live crawl and waits at least 6
 For a short development smoke test:
 
 ```bash
-PYTHONPATH=src python src/main.py --index-path data/dev-smoke-index.json --max-pages 1 --politeness-delay 0
+python3 -m src.main --index-path data/dev-smoke-index.json --max-pages 1 --politeness-delay 0
 ```
 
 The zero-delay option is for development only; the default remains coursework-compliant.
@@ -162,13 +162,13 @@ Scores are summed across query terms and rounded to four decimal places for stab
 Run a benchmark against the committed index without live crawling:
 
 ```bash
-PYTHONPATH=src python3 benchmarks/search_benchmark.py --source saved
+python3 benchmarks/search_benchmark.py --source saved
 ```
 
 Run a deterministic synthetic benchmark that times tokenisation, index building, and representative queries:
 
 ```bash
-PYTHONPATH=src python3 benchmarks/search_benchmark.py \
+python3 benchmarks/search_benchmark.py \
   --source synthetic \
   --documents 500 \
   --terms-per-document 120 \
@@ -184,6 +184,7 @@ Run the same checks as CI:
 ```bash
 ruff check .
 ruff format --check .
+mypy
 pytest --cov=src --cov-report=term-missing --cov-fail-under=85
 ```
 

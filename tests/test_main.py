@@ -1,9 +1,9 @@
 from pathlib import Path
 
-import main
-from crawler import CrawlError, CrawlResult
-from indexer import Document
-from main import SearchShell, build_argument_parser, create_shell, parse_command
+from src import main
+from src.crawler import CrawlError, CrawlResult
+from src.indexer import Document
+from src.main import SearchShell, build_argument_parser, create_shell, parse_command
 
 
 def test_parse_command_splits_command_and_arguments() -> None:
