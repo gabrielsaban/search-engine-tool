@@ -219,3 +219,6 @@ __marimo__/
 
 # Local coursework brief and non-submission reference PDFs
 docs/*.pdf
+
+# Local video and reflection working files
+video/
