@@ -1,7 +1,13 @@
 from pytest import approx
 
 from indexer import Document, build_index
-from search import SearchResult, find_pages, format_postings, parse_query_terms
+from search import (
+    SearchResult,
+    find_pages,
+    format_postings,
+    format_search_results,
+    parse_query_terms,
+)
 
 
 def sample_index():
@@ -131,3 +137,24 @@ def test_find_pages_deduplicates_repeated_query_terms() -> None:
         )
     ]
     assert result[0].score == approx(5.0794, abs=0.0001)
+
+
+def test_format_search_results_for_matches() -> None:
+    search_results = [
+        SearchResult(
+            url="https://quotes.toscrape.com/page/1/",
+            title="Quotes Page 1",
+            score=6.3671,
+            matched_terms=("good", "friends"),
+            term_frequencies={"good": 3, "friends": 1},
+        )
+    ]
+
+    assert format_search_results(search_results) == [
+        "1. Quotes Page 1 | score=6.3671 | "
+        "terms=good:3, friends:1 | https://quotes.toscrape.com/page/1/"
+    ]
+
+
+def test_format_search_results_for_no_matches() -> None:
+    assert format_search_results([]) == ["No matching pages found."]

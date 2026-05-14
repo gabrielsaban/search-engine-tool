@@ -60,6 +60,25 @@ def find_pages(search_index: SearchIndex, query: str) -> list[SearchResult]:
     return sorted(results, key=lambda result: (-result.score, result.url))
 
 
+def format_search_results(results: list[SearchResult]) -> list[str]:
+    """Return readable lines for the find command."""
+    if not results:
+        return ["No matching pages found."]
+
+    lines = []
+    for position, result in enumerate(results, start=1):
+        term_summary = ", ".join(
+            f"{term}:{result.term_frequencies[term]}"
+            for term in result.matched_terms
+        )
+        lines.append(
+            f"{position}. {result.title} | score={result.score:.4f} "
+            f"| terms={term_summary} | {result.url}"
+        )
+
+    return lines
+
+
 def _unique_terms(terms: list[str]) -> list[str]:
     return list(dict.fromkeys(terms))
 
