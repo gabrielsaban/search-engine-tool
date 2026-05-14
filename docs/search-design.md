@@ -19,6 +19,26 @@ find good friends
 
 returns pages that contain both `good` and `friends`. This matches the coursework wording that the command should return pages containing the words in the query.
 
+## Phrase And OR Queries
+
+Quoted phrases use the word positions stored in the inverted index. A query such as:
+
+```text
+find "good friends"
+```
+
+returns pages where `good` is immediately followed by `friends`. Pages containing both terms in different positions are rejected for phrase queries.
+
+Explicit `OR` splits the query into separate clauses:
+
+```text
+find indifference OR nonsense
+```
+
+returns pages matching either `indifference` or `nonsense`. Normal multi-word queries still use AND semantics unless `OR` is written explicitly.
+
+When a query has no matches, the CLI suggests close indexed terms for misspellings, for example `freinds` -> `friends`.
+
 ## Ranking
 
 Results are ranked with a small TF-IDF-style score:

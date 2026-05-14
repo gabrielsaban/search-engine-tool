@@ -123,6 +123,7 @@ class SearchShell:
             "  load              Load the saved index from disk.",
             "  print <word>      Print the posting list for a word.",
             "  find <query>      Find pages containing all query terms.",
+            '                    Supports phrases like "good friends" and OR.',
             "  help              Show this help text.",
             "  exit              Leave the shell.",
         ]

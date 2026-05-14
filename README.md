@@ -12,6 +12,8 @@ Python command-line search engine for the COMP3011 Web Services and Web Data cou
 - Positional inverted index with per-page frequency and token positions.
 - JSON persistence via `data/index.json`.
 - Boolean AND search for multi-word queries.
+- Quoted phrase search using indexed token positions.
+- Explicit `OR` queries and close-term suggestions for misspellings.
 - TF-IDF-style ranking with deterministic tie-breaking.
 - Friendly handling for missing, corrupt, and invalid index files.
 - Pytest suite with mocked HTTP and integration coverage.
@@ -64,6 +66,17 @@ https://quotes.toscrape.com/page/7/ | frequency=1 | positions=[293]
 > find good friends
 1. Quotes to Scrape | score=22.7502 | terms=good:3, friends:8 | https://quotes.toscrape.com/page/2/
 2. Quotes to Scrape | score=6.0506 | terms=good:1, friends:2 | https://quotes.toscrape.com/page/6/
+
+> find "good friends"
+1. Quotes to Scrape | score=22.7502 | terms=good:3, friends:8 | https://quotes.toscrape.com/page/2/
+
+> find indifference OR nonsense
+1. Quotes to Scrape | score=13.5237 | terms=indifference:5 | https://quotes.toscrape.com/page/2/
+2. Quotes to Scrape | score=2.2993 | terms=nonsense:1 | https://quotes.toscrape.com/page/7/
+
+> find freinds
+No matching pages found.
+Did you mean: friends?
 ```
 
 Running `build` with default settings performs a live crawl and waits at least 6 seconds between requests after the first request. The committed `data/index.json` was generated from a full polite crawl of 10 pages on 2026-05-14 and contains 849 unique terms.
@@ -126,7 +139,7 @@ Page statistics are stored separately:
 
 ## Search Behaviour
 
-Queries use the same tokenisation as indexing. Multi-word queries use AND semantics, so `find good friends` returns only pages containing both terms.
+Queries use the same tokenisation as indexing. Multi-word queries use AND semantics, so `find good friends` returns only pages containing both terms. Quoted phrases, such as `find "good friends"`, require adjacent token positions. Explicit `OR` queries, such as `find indifference OR nonsense`, return the union of matching clauses.
 
 Ranking uses:
 
@@ -181,7 +194,7 @@ The test suite covers tokenisation, indexing, storage, corrupt index handling, s
 ## Known Limitations
 
 - Automated tests use mocked HTTP rather than the live site.
-- Query processing uses AND semantics rather than phrase matching.
+- Phrase search is positional and does not include fuzzy phrase matching.
 - Ranking is intentionally compact and explainable rather than a production search-engine pipeline.
 
 ## Submission Notes
