@@ -1,3 +1,5 @@
+from pytest import approx
+
 from indexer import Document, build_index
 from search import SearchResult, find_pages, format_postings, parse_query_terms
 
@@ -64,30 +66,34 @@ def test_find_pages_returns_empty_list_for_empty_or_unknown_query() -> None:
 
 def test_find_pages_finds_single_term_matches() -> None:
     search_index = sample_index()
+    result = find_pages(search_index, "indifference")
 
-    assert find_pages(search_index, "indifference") == [
+    assert result == [
         SearchResult(
             url="https://quotes.toscrape.com/page/3/",
             title="Quotes Page 3",
-            score=1.0,
+            score=result[0].score,
             matched_terms=("indifference",),
             term_frequencies={"indifference": 1},
         )
     ]
+    assert result[0].score == approx(1.6931, abs=0.0001)
 
 
 def test_find_pages_uses_and_semantics_for_multi_word_queries() -> None:
     search_index = sample_index()
+    result = find_pages(search_index, "good friends")
 
-    assert find_pages(search_index, "good friends") == [
+    assert result == [
         SearchResult(
             url="https://quotes.toscrape.com/page/1/",
             title="Quotes Page 1",
-            score=4.0,
+            score=result[0].score,
             matched_terms=("good", "friends"),
             term_frequencies={"good": 3, "friends": 1},
         )
     ]
+    assert result[0].score == approx(6.3671, abs=0.0001)
 
 
 def test_find_pages_orders_results_by_score_then_url() -> None:
@@ -97,14 +103,14 @@ def test_find_pages_orders_results_by_score_then_url() -> None:
         SearchResult(
             url="https://quotes.toscrape.com/page/1/",
             title="Quotes Page 1",
-            score=1.0,
+            score=1.2877,
             matched_terms=("friends",),
             term_frequencies={"friends": 1},
         ),
         SearchResult(
             url="https://quotes.toscrape.com/page/2/",
             title="Quotes Page 2",
-            score=1.0,
+            score=1.2877,
             matched_terms=("friends",),
             term_frequencies={"friends": 1},
         ),
@@ -113,13 +119,15 @@ def test_find_pages_orders_results_by_score_then_url() -> None:
 
 def test_find_pages_deduplicates_repeated_query_terms() -> None:
     search_index = sample_index()
+    result = find_pages(search_index, "good GOOD")
 
-    assert find_pages(search_index, "good GOOD") == [
+    assert result == [
         SearchResult(
             url="https://quotes.toscrape.com/page/1/",
             title="Quotes Page 1",
-            score=3.0,
+            score=result[0].score,
             matched_terms=("good",),
             term_frequencies={"good": 3},
         )
     ]
+    assert result[0].score == approx(5.0794, abs=0.0001)

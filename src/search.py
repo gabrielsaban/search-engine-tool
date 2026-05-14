@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import log
 
 from indexer import SearchIndex, tokenize
 
@@ -88,7 +89,7 @@ def _build_search_result(
         term: search_index.inverted_index[term][url]["frequency"]
         for term in terms
     }
-    score = float(sum(term_frequencies.values()))
+    score = _score_result(search_index, term_frequencies)
     page = search_index.pages[url]
 
     return SearchResult(
@@ -98,3 +99,20 @@ def _build_search_result(
         matched_terms=tuple(terms),
         term_frequencies=term_frequencies,
     )
+
+
+def _score_result(
+    search_index: SearchIndex,
+    term_frequencies: dict[str, int],
+) -> float:
+    document_count = len(search_index.pages)
+    score = 0.0
+
+    for term, term_frequency in term_frequencies.items():
+        document_frequency = len(search_index.inverted_index[term])
+        inverse_document_frequency = log(
+            (document_count + 1) / (document_frequency + 1)
+        ) + 1
+        score += term_frequency * inverse_document_frequency
+
+    return round(score, 4)
