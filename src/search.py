@@ -228,9 +228,7 @@ def _edit_distance(left: str, right: str) -> int:
             substitution_cost = previous_row[right_index - 1] + (
                 left_character != right_character
             )
-            current_row.append(
-                min(insertion_cost, deletion_cost, substitution_cost)
-            )
+            current_row.append(min(insertion_cost, deletion_cost, substitution_cost))
         previous_row = current_row
 
     return previous_row[-1]
