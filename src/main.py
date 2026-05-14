@@ -1,0 +1,140 @@
+"""Command-line shell for the search engine coursework tool."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
+
+from crawler import CrawlConfig, CrawlResult, crawl_site
+from indexer import SearchIndex, build_index, load_index, save_index
+from search import find_pages, format_postings, format_search_results
+
+DEFAULT_INDEX_PATH = Path("data/index.json")
+
+
+def parse_command(raw_command: str) -> tuple[str, str]:
+    """Split a shell input line into command name and argument text."""
+    stripped_command = raw_command.strip()
+    if not stripped_command:
+        return "", ""
+
+    command, _, arguments = stripped_command.partition(" ")
+    return command.lower(), arguments.strip()
+
+
+@dataclass
+class SearchShell:
+    """Stateful command dispatcher for the interactive shell."""
+
+    index_path: Path = DEFAULT_INDEX_PATH
+    crawler: Callable[[], CrawlResult] = lambda: crawl_site(CrawlConfig())
+    search_index: SearchIndex | None = None
+
+    def execute(self, raw_command: str) -> list[str]:
+        """Execute one shell command and return lines to display."""
+        command, arguments = parse_command(raw_command)
+
+        if command == "":
+            return []
+        if command == "build":
+            return self._build()
+        if command == "load":
+            return self._load()
+        if command == "print":
+            return self._print(arguments)
+        if command == "find":
+            return self._find(arguments)
+        if command == "help":
+            return self._help()
+        if command in {"exit", "quit"}:
+            return ["Goodbye."]
+
+        return [f"Unknown command '{command}'. Type 'help' for available commands."]
+
+    def should_exit(self, raw_command: str) -> bool:
+        """Return whether a raw command should close the shell."""
+        command, _arguments = parse_command(raw_command)
+        return command in {"exit", "quit"}
+
+    def _build(self) -> list[str]:
+        crawl_result = self.crawler()
+        lines = [f"Crawled {len(crawl_result.documents)} page(s)."]
+
+        for error in crawl_result.errors:
+            lines.append(f"Warning: {error.url} - {error.message}")
+
+        if not crawl_result.documents:
+            lines.append("No documents were crawled; index was not updated.")
+            return lines
+
+        self.search_index = build_index(crawl_result.documents)
+        save_index(self.search_index, self.index_path)
+        lines.append(
+            f"Indexed {len(self.search_index.inverted_index)} unique term(s) "
+            f"and saved to {self.index_path}."
+        )
+        return lines
+
+    def _load(self) -> list[str]:
+        if not self.index_path.exists():
+            return [f"No index file found at {self.index_path}."]
+
+        self.search_index = load_index(self.index_path)
+        return [
+            f"Loaded index from {self.index_path}.",
+            f"Index contains {len(self.search_index.inverted_index)} unique term(s) "
+            f"across {len(self.search_index.pages)} page(s).",
+        ]
+
+    def _print(self, arguments: str) -> list[str]:
+        if not arguments:
+            return ["Usage: print <word>"]
+        if self.search_index is None:
+            return ["No index loaded. Run 'build' or 'load' first."]
+
+        return format_postings(self.search_index, arguments)
+
+    def _find(self, arguments: str) -> list[str]:
+        if not arguments:
+            return ["Usage: find <query terms>"]
+        if self.search_index is None:
+            return ["No index loaded. Run 'build' or 'load' first."]
+
+        return format_search_results(find_pages(self.search_index, arguments))
+
+    def _help(self) -> list[str]:
+        return [
+            "Available commands:",
+            "  build             Crawl the target site, build the index, and save it.",
+            "  load              Load the saved index from disk.",
+            "  print <word>      Print the posting list for a word.",
+            "  find <query>      Find pages containing all query terms.",
+            "  help              Show this help text.",
+            "  exit              Leave the shell.",
+        ]
+
+
+def main() -> None:
+    """Run the interactive search shell."""
+    shell = SearchShell()
+    print("Search Engine Tool")
+    print("Type 'help' for commands.")
+
+    while True:
+        try:
+            raw_command = input("> ")
+        except EOFError:
+            print()
+            break
+
+        output_lines = shell.execute(raw_command)
+        for line in output_lines:
+            print(line)
+
+        if shell.should_exit(raw_command):
+            break
+
+
+if __name__ == "__main__":
+    main()
