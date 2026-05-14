@@ -1,5 +1,5 @@
-from indexer import Document, build_index
-from search import find_pages
+from src.indexer import Document, build_index
+from src.search import find_pages
 
 
 def test_index_and_search_synthetic_corpus() -> None:

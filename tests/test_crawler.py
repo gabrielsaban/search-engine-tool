@@ -1,8 +1,8 @@
 import responses
 from requests import Session, Timeout
 
-from crawler import CrawlConfig, crawl_site, extract_document, extract_next_url
-from indexer import Document
+from src.crawler import CrawlConfig, crawl_site, extract_document, extract_next_url
+from src.indexer import Document
 
 PAGE_ONE = """
 <html>

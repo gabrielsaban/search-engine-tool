@@ -35,7 +35,7 @@ Example short run:
 
 ```bash
 printf 'build\nprint good\nfind good friends\nexit\n' | \
-  PYTHONPATH=src python src/main.py \
+  python3 -m src.main \
   --index-path data/dev-smoke-index.json \
   --max-pages 1 \
   --politeness-delay 0

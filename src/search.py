@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from math import log
 from re import finditer
 
-from indexer import SearchIndex, tokenize
+from src.indexer import SearchIndex, tokenize
 
 
 @dataclass(frozen=True)
@@ -135,7 +135,7 @@ def suggest_terms(
         for term in _unique_terms(parse_query_terms(query))
         if term not in search_index.inverted_index
     ]
-    suggestions = []
+    suggestions: list[str] = []
 
     for unknown_term in unknown_terms:
         close_terms = sorted(
@@ -164,7 +164,7 @@ def parse_query(query: str) -> list[QueryClause]:
 
 def _split_or_clauses(query: str) -> list[str]:
     clauses = []
-    current_clause = []
+    current_clause: list[str] = []
     current_word = []
     in_quote = False
     index = 0

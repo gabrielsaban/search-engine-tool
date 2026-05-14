@@ -1,7 +1,7 @@
 from pytest import approx
 
-from indexer import Document, build_index
-from search import (
+from src.indexer import Document, build_index
+from src.search import (
     SearchResult,
     find_pages,
     format_postings,

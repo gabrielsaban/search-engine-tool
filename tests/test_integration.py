@@ -1,6 +1,6 @@
-from crawler import CrawlResult
-from indexer import Document
-from main import SearchShell
+from src.crawler import CrawlResult
+from src.indexer import Document
+from src.main import SearchShell
 
 
 def test_shell_build_load_print_find_flow(tmp_path) -> None:

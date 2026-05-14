@@ -7,10 +7,24 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from json import dumps
 from pathlib import Path
+from sys import path as sys_path
 from time import perf_counter
+from typing import Generic, TypeVar
 
-from indexer import Document, SearchIndex, build_index, load_index, tokenize
-from search import find_pages
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys_path:
+    sys_path.insert(0, str(REPO_ROOT))
+
+from src.indexer import (  # noqa: E402
+    Document,
+    SearchIndex,
+    build_index,
+    load_index,
+    tokenize,
+)
+from src.search import SearchResult, find_pages  # noqa: E402
+
+T = TypeVar("T")
 
 DEFAULT_INDEX_PATH = Path("data/index.json")
 DEFAULT_SAVED_QUERIES = (
@@ -28,10 +42,10 @@ DEFAULT_SYNTHETIC_QUERIES = (
 
 
 @dataclass(frozen=True)
-class TimedValue:
+class TimedValue(Generic[T]):
     """A value returned with elapsed seconds."""
 
-    value: object
+    value: T
     seconds: float
 
 
@@ -93,10 +107,10 @@ def generate_synthetic_documents(
 
 
 def timed(
-    operation: Callable[[], object],
+    operation: Callable[[], T],
     *,
     timer: Callable[[], float] = perf_counter,
-) -> TimedValue:
+) -> TimedValue[T]:
     """Run an operation and return its result with elapsed seconds."""
     started_at = timer()
     value = operation()
@@ -107,7 +121,7 @@ def time_tokenisation(
     documents: Iterable[Document],
     *,
     timer: Callable[[], float] = perf_counter,
-) -> TimedValue:
+) -> TimedValue[int]:
     """Time tokenisation across a document iterable."""
     document_list = list(documents)
     return timed(
@@ -120,7 +134,7 @@ def time_index_build(
     documents: Iterable[Document],
     *,
     timer: Callable[[], float] = perf_counter,
-) -> TimedValue:
+) -> TimedValue[SearchIndex]:
     """Time index construction over a document iterable."""
     document_list = list(documents)
     return timed(lambda: build_index(document_list), timer=timer)
@@ -136,9 +150,11 @@ def run_query_benchmarks(
     query_benchmarks = []
 
     for query in queries:
-        timed_result = timed(
-            lambda query=query: find_pages(search_index, query), timer=timer
-        )
+
+        def run_query(query: str = query) -> list[SearchResult]:
+            return find_pages(search_index, query)
+
+        timed_result = timed(run_query, timer=timer)
         query_benchmarks.append(
             QueryBenchmark(
                 query=query,

@@ -6,6 +6,7 @@ The project currently uses GitHub Actions and local commands to run:
 
 - Ruff linting.
 - Ruff formatting checks.
+- Mypy static type checking.
 - Pytest.
 - Coverage with an 85% minimum threshold.
 
@@ -14,6 +15,7 @@ Recommended local command before opening a pull request:
 ```bash
 ruff check .
 ruff format --check .
+mypy
 pytest --cov=src --cov-report=term-missing --cov-fail-under=85
 ```
 
@@ -30,6 +32,7 @@ Current tests cover:
 - CLI command parsing and command validation.
 - End-to-end shell build/load/print/find flow using fake crawler data.
 - Crawler extraction, pagination, politeness, timeouts, HTTP errors, and external links.
+- Benchmark helper metrics and query counts.
 - A synthetic corpus indexing/searching scenario.
 
 ## Live Smoke Testing
@@ -39,7 +42,7 @@ Automated tests do not depend on the live website. This keeps CI fast and reliab
 Manual smoke tests are still useful before submission:
 
 ```bash
-PYTHONPATH=src python src/main.py --index-path data/dev-smoke-index.json --max-pages 1 --politeness-delay 0
+python3 -m src.main --index-path data/dev-smoke-index.json --max-pages 1 --politeness-delay 0
 ```
 
 Inside the shell:
@@ -54,7 +57,7 @@ exit
 For the final submission run, use the default politeness delay:
 
 ```bash
-PYTHONPATH=src python src/main.py
+python3 -m src.main
 ```
 
 Then run `build` and allow the crawler to wait at least 6 seconds between page requests.

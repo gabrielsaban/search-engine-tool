@@ -11,7 +11,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from requests import RequestException, Session
 
-from indexer import Document
+from src.indexer import Document
 
 TARGET_URL = "https://quotes.toscrape.com/"
 DEFAULT_POLITENESS_DELAY = 6.0
@@ -135,7 +135,7 @@ def extract_next_url(base_url: str, html: str) -> str | None:
         return None
 
     href = next_link.get("href")
-    if not href:
+    if not isinstance(href, str) or not href:
         return None
 
     return urljoin(base_url, href)
