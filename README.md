@@ -202,6 +202,7 @@ The test suite covers tokenisation, indexing, storage, corrupt index handling, s
 - [Indexing design](docs/indexing-design.md)
 - [Search design](docs/search-design.md)
 - [Search research and rationale](docs/SEARCH_RESEARCH.md)
+- [Benchmarking notes](docs/BENCHMARKING.md)
 - [CLI design](docs/cli-design.md)
 - [Quality checklist](docs/quality-checklist.md)
 
