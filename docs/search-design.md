@@ -1,0 +1,40 @@
+# Search Design Notes
+
+## Query Parsing
+
+Search queries reuse the indexer's tokenisation rules. This keeps indexing and searching consistent:
+
+- Search is case-insensitive.
+- Punctuation around words is ignored.
+- Apostrophes inside words are preserved.
+- Repeated query terms are deduplicated while preserving order.
+
+## Multi-Word Queries
+
+Multi-word queries use AND semantics. A query such as:
+
+```text
+find good friends
+```
+
+returns pages that contain both `good` and `friends`. This matches the coursework wording that the command should return pages containing the words in the query.
+
+## Ranking
+
+Results are ranked with a small TF-IDF-style score:
+
+```text
+term_frequency * (ln((document_count + 1) / (document_frequency + 1)) + 1)
+```
+
+Scores for each query term are added together. This means:
+
+- Words that appear more often on a page increase that page's score.
+- Words that appear on fewer pages are treated as more distinctive.
+- Ties are ordered by URL so output is deterministic.
+
+The implementation rounds scores to four decimal places for stable command-line output and predictable tests.
+
+## Complexity
+
+For a query with `q` unique terms, candidate page discovery intersects posting lists for those terms. In the usual case, this is proportional to the combined size of the relevant posting lists rather than the number of all indexed words.
