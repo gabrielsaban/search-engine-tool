@@ -220,6 +220,7 @@ The test suite covers tokenisation, indexing, storage, corrupt index handling, s
 - [Benchmarking notes](docs/BENCHMARKING.md)
 - [CLI design](docs/cli-design.md)
 - [Quality checklist](docs/quality-checklist.md)
+- [Release notes v1.0.0](docs/RELEASE_NOTES_v1.0.0.md)
 
 ## References
 
@@ -238,6 +239,7 @@ The test suite covers tokenisation, indexing, storage, corrupt index handling, s
 ## Submission Notes
 
 - Compiled index: `data/index.json`
-- Main entry point: `src/main.py`
+- Main command: `python3 -m src.main`
+- Release tag: `v1.0.0`
 - CI workflow: `.github/workflows/ci.yml`
 - The final video should demonstrate `build`, `load`, `print`, `find`, tests, Git/CI, and the required GenAI critical reflection.
