@@ -1,0 +1,76 @@
+from indexer import Document, build_index
+from search import SearchResult, find_pages, format_postings, parse_query_terms
+
+
+def sample_index():
+    return build_index(
+        [
+            Document(
+                url="https://quotes.toscrape.com/page/1/",
+                title="Quotes Page 1",
+                text="Good friends and good books make a good life.",
+            ),
+            Document(
+                url="https://quotes.toscrape.com/page/2/",
+                title="Quotes Page 2",
+                text="Friends are the medicine of life.",
+            ),
+            Document(
+                url="https://quotes.toscrape.com/page/3/",
+                title="Quotes Page 3",
+                text="Indifference is not friendship.",
+            ),
+        ]
+    )
+
+
+def test_parse_query_terms_reuses_index_tokenisation_rules() -> None:
+    assert parse_query_terms("Good, FRIENDS -- that's all.") == [
+        "good",
+        "friends",
+        "that's",
+        "all",
+    ]
+
+
+def test_parse_query_terms_returns_empty_list_for_blank_query() -> None:
+    assert parse_query_terms(" \n\t ") == []
+
+
+def test_format_postings_for_existing_word() -> None:
+    search_index = sample_index()
+
+    assert format_postings(search_index, "GOOD") == [
+        "good",
+        "https://quotes.toscrape.com/page/1/ | frequency=3 | positions=[0, 3, 7]",
+    ]
+
+
+def test_format_postings_for_unknown_or_empty_word() -> None:
+    search_index = sample_index()
+
+    assert format_postings(search_index, "missing") == [
+        "No postings found for 'missing'."
+    ]
+    assert format_postings(search_index, "") == ["No word provided."]
+
+
+def test_find_pages_returns_empty_list_for_empty_or_unknown_query() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, "") == []
+    assert find_pages(search_index, "missing") == []
+
+
+def test_find_pages_finds_single_term_matches() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, "indifference") == [
+        SearchResult(
+            url="https://quotes.toscrape.com/page/3/",
+            title="Quotes Page 3",
+            score=1.0,
+            matched_terms=("indifference",),
+            term_frequencies={"indifference": 1},
+        )
+    ]
