@@ -19,9 +19,12 @@ def test_index_and_search_synthetic_corpus() -> None:
     search_index = build_index(documents)
 
     assert len(search_index.pages) == 100
-    assert search_index.inverted_index["wisdom"][
-        "https://quotes.toscrape.com/page/1/"
-    ]["frequency"] == 1
+    assert (
+        search_index.inverted_index["wisdom"]["https://quotes.toscrape.com/page/1/"][
+            "frequency"
+        ]
+        == 1
+    )
     results = find_pages(search_index, "rareterm wisdom")
 
     assert len(results) == 1
