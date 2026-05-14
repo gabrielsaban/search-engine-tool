@@ -1,6 +1,16 @@
 import json
 
-from indexer import Document, SearchIndex, build_index, load_index, save_index, tokenize
+import pytest
+
+from indexer import (
+    Document,
+    IndexLoadError,
+    SearchIndex,
+    build_index,
+    load_index,
+    save_index,
+    tokenize,
+)
 
 
 def test_tokenize_normalises_case_and_punctuation() -> None:
@@ -135,3 +145,11 @@ def test_save_index_writes_deterministic_json(tmp_path) -> None:
     saved_payload = json.loads(index_path.read_text(encoding="utf-8"))
     assert list(saved_payload) == ["inverted_index", "pages"]
     assert list(saved_payload["inverted_index"]) == ["apple", "zebra"]
+
+
+def test_load_index_rejects_non_object_json(tmp_path) -> None:
+    index_path = tmp_path / "index.json"
+    index_path.write_text("[]", encoding="utf-8")
+
+    with pytest.raises(IndexLoadError, match="top-level JSON value"):
+        load_index(index_path)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from json import dump, load
+from json import JSONDecodeError, dump, load
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
@@ -27,6 +27,10 @@ class PageStats(TypedDict):
 
 
 InvertedIndex = dict[str, dict[str, Posting]]
+
+
+class IndexLoadError(Exception):
+    """Raised when a saved index cannot be loaded safely."""
 
 
 @dataclass(frozen=True)
@@ -55,6 +59,10 @@ class SearchIndex:
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> SearchIndex:
         """Recreate a search index from a decoded JSON payload."""
+        for key in ("inverted_index", "pages"):
+            if key not in payload:
+                raise IndexLoadError(f"missing key '{key}'")
+
         return cls(
             inverted_index=cast(InvertedIndex, payload["inverted_index"]),
             pages=cast(dict[str, PageStats], payload["pages"]),
@@ -103,7 +111,13 @@ def save_index(search_index: SearchIndex, path: str | Path) -> None:
 
 def load_index(path: str | Path) -> SearchIndex:
     """Load a search index from JSON."""
-    with Path(path).open(encoding="utf-8") as index_file:
-        payload = load(index_file)
+    try:
+        with Path(path).open(encoding="utf-8") as index_file:
+            payload = load(index_file)
+    except JSONDecodeError as exc:
+        raise IndexLoadError("invalid JSON") from exc
+
+    if not isinstance(payload, dict):
+        raise IndexLoadError("top-level JSON value must be an object")
 
     return SearchIndex.from_dict(payload)

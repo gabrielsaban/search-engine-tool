@@ -20,6 +20,26 @@ def test_load_reports_missing_index(tmp_path) -> None:
     ]
 
 
+def test_load_reports_corrupt_index_json(tmp_path) -> None:
+    index_path = tmp_path / "index.json"
+    index_path.write_text("{not valid json", encoding="utf-8")
+    shell = SearchShell(index_path=index_path)
+
+    assert shell.execute("load") == [
+        f"Could not load index from {index_path}: invalid JSON."
+    ]
+
+
+def test_load_reports_invalid_index_structure(tmp_path) -> None:
+    index_path = tmp_path / "index.json"
+    index_path.write_text('{"inverted_index": {}}', encoding="utf-8")
+    shell = SearchShell(index_path=index_path)
+
+    assert shell.execute("load") == [
+        f"Could not load index from {index_path}: missing key 'pages'."
+    ]
+
+
 def test_build_crawls_indexes_and_saves(tmp_path) -> None:
     index_path = tmp_path / "index.json"
 
