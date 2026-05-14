@@ -123,6 +123,34 @@ def format_search_results(results: list[SearchResult]) -> list[str]:
     return lines
 
 
+def suggest_terms(
+    search_index: SearchIndex,
+    query: str,
+    *,
+    max_suggestions: int = 3,
+) -> list[str]:
+    """Suggest indexed terms for unknown query terms."""
+    unknown_terms = [
+        term
+        for term in _unique_terms(parse_query_terms(query))
+        if term not in search_index.inverted_index
+    ]
+    suggestions = []
+
+    for unknown_term in unknown_terms:
+        close_terms = sorted(
+            (
+                (term, _edit_distance(unknown_term, term))
+                for term in search_index.inverted_index
+                if _is_plausible_suggestion(unknown_term, term)
+            ),
+            key=lambda item: (item[1], item[0]),
+        )
+        suggestions.extend(term for term, _distance in close_terms[:max_suggestions])
+
+    return _unique_terms(suggestions)[:max_suggestions]
+
+
 def _unique_terms(terms: list[str]) -> list[str]:
     return list(dict.fromkeys(terms))
 
@@ -173,6 +201,39 @@ def _split_or_clauses(query: str) -> list[str]:
 
     clauses.append("".join(current_clause).strip())
     return clauses
+
+
+def _is_plausible_suggestion(unknown_term: str, indexed_term: str) -> bool:
+    length_gap = abs(len(unknown_term) - len(indexed_term))
+    if length_gap > 2:
+        return False
+
+    return _edit_distance(unknown_term, indexed_term) <= 2
+
+
+def _edit_distance(left: str, right: str) -> int:
+    if left == right:
+        return 0
+    if not left:
+        return len(right)
+    if not right:
+        return len(left)
+
+    previous_row = list(range(len(right) + 1))
+    for left_index, left_character in enumerate(left, start=1):
+        current_row = [left_index]
+        for right_index, right_character in enumerate(right, start=1):
+            insertion_cost = current_row[right_index - 1] + 1
+            deletion_cost = previous_row[right_index] + 1
+            substitution_cost = previous_row[right_index - 1] + (
+                left_character != right_character
+            )
+            current_row.append(
+                min(insertion_cost, deletion_cost, substitution_cost)
+            )
+        previous_row = current_row
+
+    return previous_row[-1]
 
 
 def _remove_quoted_phrases(query: str) -> str:

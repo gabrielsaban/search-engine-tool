@@ -7,6 +7,7 @@ from search import (
     format_postings,
     format_search_results,
     parse_query_terms,
+    suggest_terms,
 )
 
 
@@ -226,3 +227,15 @@ def test_format_search_results_for_matches() -> None:
 
 def test_format_search_results_for_no_matches() -> None:
     assert format_search_results([]) == ["No matching pages found."]
+
+
+def test_suggest_terms_finds_close_misspellings() -> None:
+    search_index = sample_index()
+
+    assert suggest_terms(search_index, "freinds") == ["friends"]
+
+
+def test_suggest_terms_ignores_known_terms() -> None:
+    search_index = sample_index()
+
+    assert suggest_terms(search_index, "friends") == []
