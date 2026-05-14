@@ -9,7 +9,7 @@ The interactive shell supports the four coursework commands:
 - `print <word>`: display the posting list for one word.
 - `find <query terms>`: find pages containing all query terms.
 
-It also supports `help`, `exit`, and `quit` for usability.
+It also supports `explain`, `help`, `exit`, and `quit` for usability. `explain <query terms>` is an extension command that shows why the top-ranked result scored highest.
 
 ## State Management
 
@@ -45,4 +45,4 @@ This exercises the real CLI entrypoint against the live first page only.
 
 ## Testing Strategy
 
-Automated CLI tests inject fake crawler results, so they verify command behaviour without network access or real sleep delays. The tests cover command parsing, build, load, print, find, missing indexes, missing arguments, unknown commands, and startup options.
+Automated CLI tests inject fake crawler results, so they verify command behaviour without network access or real sleep delays. The tests cover command parsing, build, load, print, find, explain, missing indexes, missing arguments, unknown commands, and startup options.

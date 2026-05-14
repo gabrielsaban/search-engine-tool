@@ -9,7 +9,14 @@ from pathlib import Path
 
 from src.crawler import CrawlConfig, CrawlResult, crawl_site
 from src.indexer import IndexLoadError, SearchIndex, build_index, load_index, save_index
-from src.search import find_pages, format_postings, format_search_results, suggest_terms
+from src.search import (
+    explain_query,
+    find_pages,
+    format_postings,
+    format_search_explanation,
+    format_search_results,
+    suggest_terms,
+)
 
 DEFAULT_INDEX_PATH = Path("data/index.json")
 
@@ -46,6 +53,8 @@ class SearchShell:
             return self._print(arguments)
         if command == "find":
             return self._find(arguments)
+        if command == "explain":
+            return self._explain(arguments)
         if command == "help":
             return self._help()
         if command in {"exit", "quit"}:
@@ -116,6 +125,22 @@ class SearchShell:
 
         return lines
 
+    def _explain(self, arguments: str) -> list[str]:
+        if not arguments:
+            return ["Usage: explain <query terms>"]
+        if self.search_index is None:
+            return ["No index loaded. Run 'build' or 'load' first."]
+
+        explanation = explain_query(self.search_index, arguments)
+        lines = format_search_explanation(explanation)
+
+        if explanation is None:
+            suggestions = suggest_terms(self.search_index, arguments)
+            if suggestions:
+                lines.append(f"Did you mean: {', '.join(suggestions)}?")
+
+        return lines
+
     def _help(self) -> list[str]:
         return [
             "Available commands:",
@@ -124,6 +149,7 @@ class SearchShell:
             "  print <word>      Print the posting list for a word.",
             "  find <query>      Find pages containing all query terms.",
             '                    Supports phrases like "good friends" and OR.',
+            "  explain <query>   Explain the top result's score.",
             "  help              Show this help text.",
             "  exit              Leave the shell.",
         ]

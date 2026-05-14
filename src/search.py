@@ -21,6 +21,26 @@ class SearchResult:
 
 
 @dataclass(frozen=True)
+class TermContribution:
+    """One term's contribution to a ranked result score."""
+
+    term: str
+    term_frequency: int
+    document_frequency: int
+    document_count: int
+    inverse_document_frequency: float
+    contribution: float
+
+
+@dataclass(frozen=True)
+class SearchExplanation:
+    """A ranked result plus the score components that produced it."""
+
+    result: SearchResult
+    term_contributions: tuple[TermContribution, ...]
+
+
+@dataclass(frozen=True)
 class QueryClause:
     """One AND-style query clause, optionally containing phrases."""
 
@@ -120,6 +140,49 @@ def format_search_results(results: list[SearchResult]) -> list[str]:
             f"| terms={term_summary} | {result.url}"
         )
 
+    return lines
+
+
+def explain_query(search_index: SearchIndex, query: str) -> SearchExplanation | None:
+    """Explain the score for the highest-ranked result of a query."""
+    results = find_pages(search_index, query)
+    if not results:
+        return None
+
+    top_result = results[0]
+    return SearchExplanation(
+        result=top_result,
+        term_contributions=tuple(
+            _term_contribution(
+                search_index,
+                term,
+                top_result.term_frequencies[term],
+            )
+            for term in top_result.matched_terms
+        ),
+    )
+
+
+def format_search_explanation(explanation: SearchExplanation | None) -> list[str]:
+    """Return readable lines explaining a query's top-ranked result."""
+    if explanation is None:
+        return ["No matching pages found."]
+
+    result = explanation.result
+    lines = [
+        f"Top result: {result.title} | score={result.score:.4f} | {result.url}",
+        "Score breakdown:",
+    ]
+
+    for contribution in explanation.term_contributions:
+        lines.append(
+            f"  {contribution.term}: tf={contribution.term_frequency}, "
+            f"df={contribution.document_frequency}/{contribution.document_count}, "
+            f"idf={contribution.inverse_document_frequency:.4f}, "
+            f"contribution={contribution.contribution:.4f}"
+        )
+
+    lines.append("Formula: score = sum(term_frequency * inverse_document_frequency)")
     return lines
 
 
@@ -308,14 +371,35 @@ def _score_result(
     search_index: SearchIndex,
     term_frequencies: dict[str, int],
 ) -> float:
-    document_count = len(search_index.pages)
     score = 0.0
 
     for term, term_frequency in term_frequencies.items():
-        document_frequency = len(search_index.inverted_index[term])
-        inverse_document_frequency = (
-            log((document_count + 1) / (document_frequency + 1)) + 1
-        )
+        inverse_document_frequency = _inverse_document_frequency(search_index, term)
         score += term_frequency * inverse_document_frequency
 
     return round(score, 4)
+
+
+def _term_contribution(
+    search_index: SearchIndex,
+    term: str,
+    term_frequency: int,
+) -> TermContribution:
+    document_frequency = len(search_index.inverted_index[term])
+    document_count = len(search_index.pages)
+    inverse_document_frequency = _inverse_document_frequency(search_index, term)
+
+    return TermContribution(
+        term=term,
+        term_frequency=term_frequency,
+        document_frequency=document_frequency,
+        document_count=document_count,
+        inverse_document_frequency=round(inverse_document_frequency, 4),
+        contribution=round(term_frequency * inverse_document_frequency, 4),
+    )
+
+
+def _inverse_document_frequency(search_index: SearchIndex, term: str) -> float:
+    document_count = len(search_index.pages)
+    document_frequency = len(search_index.inverted_index[term])
+    return log((document_count + 1) / (document_frequency + 1)) + 1

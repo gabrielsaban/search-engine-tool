@@ -539,6 +539,7 @@ load
 print nonsense
 find indifference
 find good friends
+explain good friends
 find
 find termthatdoesnotexist
 ```

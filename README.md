@@ -15,6 +15,7 @@ Python command-line search engine for the COMP3011 Web Services and Web Data cou
 - Quoted phrase search using indexed token positions.
 - Explicit `OR` queries and close-term suggestions for misspellings.
 - TF-IDF-style ranking with deterministic tie-breaking.
+- Optional `explain <query>` command showing top-result score contributions.
 - Friendly handling for missing, corrupt, and invalid index files.
 - Pytest suite with mocked HTTP and integration coverage.
 
@@ -48,6 +49,12 @@ print <word>
 find <query terms>
 ```
 
+Extension command:
+
+```text
+explain <query terms>
+```
+
 Example session:
 
 ```text
@@ -77,6 +84,13 @@ https://quotes.toscrape.com/page/7/ | frequency=1 | positions=[293]
 > find freinds
 No matching pages found.
 Did you mean: friends?
+
+> explain good friends
+Top result: Quotes to Scrape | score=22.7502 | https://quotes.toscrape.com/page/2/
+Score breakdown:
+  good: tf=3, df=6/10, idf=1.4520, contribution=4.3560
+  friends: tf=8, df=2/10, idf=2.2993, contribution=18.3943
+Formula: score = sum(term_frequency * inverse_document_frequency)
 ```
 
 Running `build` with default settings performs a live crawl and waits at least 6 seconds between requests after the first request. The committed `data/index.json` was generated from a full polite crawl of 10 pages on 2026-05-14 and contains 849 unique terms.
@@ -147,7 +161,7 @@ Ranking uses:
 term_frequency * (ln((document_count + 1) / (document_frequency + 1)) + 1)
 ```
 
-Scores are summed across query terms and rounded to four decimal places for stable output.
+Scores are summed across query terms and rounded to four decimal places for stable output. The optional `explain <query>` command reports the top result's term frequency, document frequency, IDF, and per-term score contribution.
 
 ## Complexity
 
@@ -191,11 +205,11 @@ pytest --cov=src --cov-report=term-missing --cov-fail-under=85
 Current local result:
 
 ```text
-60 passed
-coverage: 96.40%
+63 passed
+coverage: 95.48%
 ```
 
-The test suite covers tokenisation, indexing, storage, corrupt index handling, search ranking, CLI flows, mocked crawler behaviour, benchmark helpers, and synthetic corpus search. Live crawling is kept out of CI so tests remain fast and deterministic.
+The test suite covers tokenisation, indexing, storage, corrupt index handling, search ranking and explanation, CLI flows, mocked crawler behaviour, benchmark helpers, and synthetic corpus search. Live crawling is kept out of CI so tests remain fast and deterministic.
 
 ## Documentation
 
@@ -218,6 +232,7 @@ The test suite covers tokenisation, indexing, storage, corrupt index handling, s
 
 - Automated tests use mocked HTTP rather than the live site.
 - Phrase search is positional and does not include fuzzy phrase matching.
+- `explain` describes the top-ranked result only, keeping output concise for the CLI.
 - Ranking is intentionally compact and explainable rather than a production search-engine pipeline.
 
 ## Submission Notes
