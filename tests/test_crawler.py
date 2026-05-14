@@ -114,6 +114,9 @@ def test_crawl_site_follows_pagination_and_respects_politeness() -> None:
     ]
     assert result.errors == []
     assert sleep_calls == [6.0]
+    assert responses.calls[0].request.headers["User-Agent"] == (
+        "COMP3011-search-engine-tool/1.0"
+    )
 
 
 @responses.activate

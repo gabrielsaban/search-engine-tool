@@ -16,6 +16,7 @@ from indexer import Document
 TARGET_URL = "https://quotes.toscrape.com/"
 DEFAULT_POLITENESS_DELAY = 6.0
 DEFAULT_TIMEOUT = 10.0
+DEFAULT_USER_AGENT = "COMP3011-search-engine-tool/1.0"
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class CrawlConfig:
     start_url: str = TARGET_URL
     politeness_delay: float = DEFAULT_POLITENESS_DELAY
     timeout: float = DEFAULT_TIMEOUT
+    user_agent: str = DEFAULT_USER_AGENT
     max_pages: int | None = None
 
 
@@ -55,6 +57,7 @@ def crawl_site(
     """Crawl quote pages by following pagination links."""
     crawl_config = config or CrawlConfig()
     http_session = session or Session()
+    http_session.headers.update({"User-Agent": crawl_config.user_agent})
     documents: list[Document] = []
     errors: list[CrawlError] = []
     visited: list[str] = []
