@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import log
+from re import finditer
 
 from indexer import SearchIndex, tokenize
 
@@ -19,9 +20,39 @@ class SearchResult:
     term_frequencies: dict[str, int]
 
 
+@dataclass(frozen=True)
+class QueryClause:
+    """One AND-style query clause, optionally containing phrases."""
+
+    terms: tuple[str, ...]
+    phrases: tuple[tuple[str, ...], ...] = ()
+
+    @property
+    def all_terms(self) -> tuple[str, ...]:
+        phrase_terms = [term for phrase in self.phrases for term in phrase]
+        return tuple(_unique_terms([*self.terms, *phrase_terms]))
+
+
 def parse_query_terms(query: str) -> list[str]:
     """Parse query text using the same tokenisation rules as the index."""
     return tokenize(query)
+
+
+def parse_query_clause(query: str) -> QueryClause:
+    """Parse one AND-style query clause with optional quoted phrases."""
+    phrases = []
+    query_without_phrases = query
+
+    for match in finditer(r'"([^"]+)"', query):
+        phrase_terms = tuple(tokenize(match.group(1)))
+        if phrase_terms:
+            phrases.append(phrase_terms)
+
+    query_without_phrases = _remove_quoted_phrases(query_without_phrases)
+    return QueryClause(
+        terms=tuple(_unique_terms(tokenize(query_without_phrases))),
+        phrases=tuple(phrases),
+    )
 
 
 def format_postings(search_index: SearchIndex, word: str) -> list[str]:
@@ -48,12 +79,20 @@ def format_postings(search_index: SearchIndex, word: str) -> list[str]:
 
 def find_pages(search_index: SearchIndex, query: str) -> list[SearchResult]:
     """Find pages containing all query terms."""
-    terms = _unique_terms(parse_query_terms(query))
+    query_clause = parse_query_clause(query)
+    terms = list(query_clause.all_terms)
     if not terms:
         return []
 
     candidate_urls = _candidate_urls(search_index, terms)
-    results = [_build_search_result(search_index, url, terms) for url in candidate_urls]
+    phrase_matched_urls = {
+        url
+        for url in candidate_urls
+        if _matches_all_phrases(search_index, url, query_clause.phrases)
+    }
+    results = [
+        _build_search_result(search_index, url, terms) for url in phrase_matched_urls
+    ]
     return sorted(results, key=lambda result: (-result.score, result.url))
 
 
@@ -77,6 +116,10 @@ def format_search_results(results: list[SearchResult]) -> list[str]:
 
 def _unique_terms(terms: list[str]) -> list[str]:
     return list(dict.fromkeys(terms))
+
+
+def _remove_quoted_phrases(query: str) -> str:
+    return " ".join(part for part in query.split('"')[::2])
 
 
 def _candidate_urls(search_index: SearchIndex, terms: list[str]) -> set[str]:
@@ -112,6 +155,37 @@ def _build_search_result(
         score=score,
         matched_terms=tuple(terms),
         term_frequencies=term_frequencies,
+    )
+
+
+def _matches_all_phrases(
+    search_index: SearchIndex,
+    url: str,
+    phrases: tuple[tuple[str, ...], ...],
+) -> bool:
+    return all(_matches_phrase(search_index, url, phrase) for phrase in phrases)
+
+
+def _matches_phrase(
+    search_index: SearchIndex,
+    url: str,
+    phrase: tuple[str, ...],
+) -> bool:
+    if not phrase:
+        return True
+
+    first_term_positions = search_index.inverted_index[phrase[0]][url]["positions"]
+    following_positions = [
+        set(search_index.inverted_index[term][url]["positions"])
+        for term in phrase[1:]
+    ]
+
+    return any(
+        all(
+            start_position + offset in positions
+            for offset, positions in enumerate(following_positions, start=1)
+        )
+        for start_position in first_term_positions
     )
 
 
