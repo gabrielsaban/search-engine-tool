@@ -74,3 +74,52 @@ def test_find_pages_finds_single_term_matches() -> None:
             term_frequencies={"indifference": 1},
         )
     ]
+
+
+def test_find_pages_uses_and_semantics_for_multi_word_queries() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, "good friends") == [
+        SearchResult(
+            url="https://quotes.toscrape.com/page/1/",
+            title="Quotes Page 1",
+            score=4.0,
+            matched_terms=("good", "friends"),
+            term_frequencies={"good": 3, "friends": 1},
+        )
+    ]
+
+
+def test_find_pages_orders_results_by_score_then_url() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, "friends") == [
+        SearchResult(
+            url="https://quotes.toscrape.com/page/1/",
+            title="Quotes Page 1",
+            score=1.0,
+            matched_terms=("friends",),
+            term_frequencies={"friends": 1},
+        ),
+        SearchResult(
+            url="https://quotes.toscrape.com/page/2/",
+            title="Quotes Page 2",
+            score=1.0,
+            matched_terms=("friends",),
+            term_frequencies={"friends": 1},
+        ),
+    ]
+
+
+def test_find_pages_deduplicates_repeated_query_terms() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, "good GOOD") == [
+        SearchResult(
+            url="https://quotes.toscrape.com/page/1/",
+            title="Quotes Page 1",
+            score=3.0,
+            matched_terms=("good",),
+            term_frequencies={"good": 3},
+        )
+    ]

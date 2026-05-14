@@ -47,7 +47,7 @@ def format_postings(search_index: SearchIndex, word: str) -> list[str]:
 
 def find_pages(search_index: SearchIndex, query: str) -> list[SearchResult]:
     """Find pages containing all query terms."""
-    terms = parse_query_terms(query)
+    terms = _unique_terms(parse_query_terms(query))
     if not terms:
         return []
 
@@ -57,6 +57,10 @@ def find_pages(search_index: SearchIndex, query: str) -> list[SearchResult]:
         for url in candidate_urls
     ]
     return sorted(results, key=lambda result: (-result.score, result.url))
+
+
+def _unique_terms(terms: list[str]) -> list[str]:
+    return list(dict.fromkeys(terms))
 
 
 def _candidate_urls(search_index: SearchIndex, terms: list[str]) -> set[str]:
