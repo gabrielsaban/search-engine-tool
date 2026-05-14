@@ -41,6 +41,13 @@ Planned branches:
 - `feat/cli`: interactive shell and command wiring.
 - `test/coverage-hardening`: extra edge cases, integration tests, coverage and quality tightening.
 - `docs/submission-polish`: README, architecture notes, GenAI reflection, video checklist.
+- `feat/advanced-query-processing`: phrase search, OR queries, and term suggestions.
+- `docs/search-research`: algorithm research notes and explicit design rationale.
+- `feat/benchmarking`: reproducible performance evidence and complexity measurements.
+- `chore/static-quality`: stricter code quality checks and publication polish.
+- `release/v1.0.0`: release tag, release notes, and submission evidence.
+- `docs/video-package`: final video script, demo checklist, and GenAI reflection notes.
+- `feat/novel-search-insight`: a creative extension with tests and documentation.
 
 Use conventional commits. Prefer several small commits over one large commit:
 
