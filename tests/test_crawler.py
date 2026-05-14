@@ -1,5 +1,5 @@
 import responses
-from requests import Session
+from requests import Session, Timeout
 
 from crawler import CrawlConfig, crawl_site, extract_document, extract_next_url
 from indexer import Document
@@ -134,3 +134,65 @@ def test_crawl_site_records_request_errors() -> None:
     assert result.documents == []
     assert len(result.errors) == 1
     assert result.errors[0].url == "https://quotes.toscrape.com/"
+
+
+@responses.activate
+def test_crawl_site_can_limit_pages_for_development_runs() -> None:
+    responses.add(
+        responses.GET,
+        "https://quotes.toscrape.com/",
+        body=PAGE_ONE,
+        status=200,
+    )
+
+    result = crawl_site(
+        CrawlConfig(start_url="https://quotes.toscrape.com/", max_pages=1),
+        session=Session(),
+        sleep=lambda _seconds: None,
+    )
+
+    assert [document.url for document in result.documents] == [
+        "https://quotes.toscrape.com/"
+    ]
+    assert result.visited_urls == ("https://quotes.toscrape.com/",)
+
+
+@responses.activate
+def test_crawl_site_skips_external_pagination_links() -> None:
+    html = PAGE_ONE.replace('/page/2/', "https://example.com/page/2/")
+    responses.add(
+        responses.GET,
+        "https://quotes.toscrape.com/",
+        body=html,
+        status=200,
+    )
+
+    result = crawl_site(
+        CrawlConfig(start_url="https://quotes.toscrape.com/"),
+        session=Session(),
+        sleep=lambda _seconds: None,
+    )
+
+    assert len(result.documents) == 1
+    assert len(result.errors) == 1
+    assert result.errors[0].url == "https://example.com/page/2/"
+    assert "outside the target site" in result.errors[0].message
+
+
+@responses.activate
+def test_crawl_site_records_timeout_errors() -> None:
+    responses.add(
+        responses.GET,
+        "https://quotes.toscrape.com/",
+        body=Timeout("request timed out"),
+    )
+
+    result = crawl_site(
+        CrawlConfig(start_url="https://quotes.toscrape.com/"),
+        session=Session(),
+        sleep=lambda _seconds: None,
+    )
+
+    assert result.documents == []
+    assert len(result.errors) == 1
+    assert "request timed out" in result.errors[0].message
