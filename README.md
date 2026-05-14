@@ -1,61 +1,33 @@
 # Search Engine Tool
 
-Python command-line search engine for the COMP3011 Web Services and Web Data coursework. The tool crawls [quotes.toscrape.com](https://quotes.toscrape.com/), builds an inverted index, saves it to disk, reloads it, and supports word and multi-word search from an interactive shell.
+[![CI](https://github.com/gabrielsaban/search-engine-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/gabrielsaban/search-engine-tool/actions/workflows/ci.yml)
 
-## Coursework Requirements Covered
+Python command-line search engine for the COMP3011 Web Services and Web Data coursework. It crawls [quotes.toscrape.com](https://quotes.toscrape.com/), builds a positional inverted index, persists the index, and supports the required `build`, `load`, `print`, and `find` commands.
 
-- Crawls the target website: `https://quotes.toscrape.com/`
-- Observes a default 6-second politeness delay between live requests.
-- Builds an inverted index with word frequency and word positions per page.
-- Treats search as case-insensitive.
-- Saves and loads the compiled index from the filesystem.
-- Provides the required commands: `build`, `load`, `print`, and `find`.
-- Includes unit, integration, crawler, CLI, and synthetic-corpus tests.
-- Uses GitHub Actions CI for linting, formatting, tests, and coverage.
+## Features
 
-## Repository Structure
+- Polite crawler with a default 6-second delay between live requests.
+- Beautiful Soup HTML parsing for quote text, authors, tags, and pagination.
+- Case-insensitive tokenisation.
+- Positional inverted index with per-page frequency and token positions.
+- JSON persistence via `data/index.json`.
+- Boolean AND search for multi-word queries.
+- TF-IDF-style ranking with deterministic tie-breaking.
+- Friendly handling for missing, corrupt, and invalid index files.
+- Pytest suite with mocked HTTP and integration coverage.
 
-```text
-src/
-  crawler.py      Polite crawler and HTML extraction
-  indexer.py      Tokenisation, inverted index, JSON persistence
-  search.py       Posting lookup, multi-term search, TF-IDF-style ranking
-  main.py         Interactive command-line shell
-tests/
-  test_crawler.py
-  test_indexer.py
-  test_search.py
-  test_main.py
-  test_integration.py
-  test_performance.py
-data/
-  index.json      Compiled index generated from the live target website
-docs/
-  *.md            Design notes, quality checklist, and testing notes
-requirements.txt
-requirements-dev.txt
-pyproject.toml
-```
-
-## Setup
-
-Create and activate a virtual environment:
+## Install
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-Install runtime and development dependencies:
+The project is tested with Python 3.12 in CI.
 
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt -r requirements-dev.txt
-```
-
-The project uses Python 3.12 in CI.
-
-## Running The CLI
+## Usage
 
 Start the interactive shell:
 
@@ -63,110 +35,71 @@ Start the interactive shell:
 PYTHONPATH=src python src/main.py
 ```
 
-You should see:
+The default index path is `data/index.json`.
+
+Required commands:
 
 ```text
-Search Engine Tool
-Type 'help' for commands.
->
+build
+load
+print <word>
+find <query terms>
 ```
 
-The default index path is:
-
-```text
-data/index.json
-```
-
-## Required Commands
-
-### `build`
-
-Crawls the live website, builds the inverted index, and saves it to `data/index.json`.
-
-```text
-> build
-Crawled 10 page(s).
-Indexed 849 unique term(s) and saved to data/index.json.
-```
-
-The default build uses a 6-second politeness delay between requests after the first request. A full crawl therefore takes about one minute.
-
-### `load`
-
-Loads the saved index from disk.
+Example session:
 
 ```text
 > load
 Loaded index from data/index.json.
 Index contains 849 unique term(s) across 10 page(s).
-```
 
-### `print <word>`
-
-Prints the posting list for a word, including frequency and positions.
-
-```text
 > print nonsense
 nonsense
 https://quotes.toscrape.com/page/2/ | frequency=1 | positions=[398]
 https://quotes.toscrape.com/page/7/ | frequency=1 | positions=[293]
-```
 
-### `find <query terms>`
-
-Finds pages containing all query terms and ranks them with a TF-IDF-style score.
-
-```text
 > find indifference
 1. Quotes to Scrape | score=13.5237 | terms=indifference:5 | https://quotes.toscrape.com/page/2/
-```
 
-```text
 > find good friends
 1. Quotes to Scrape | score=22.7502 | terms=good:3, friends:8 | https://quotes.toscrape.com/page/2/
 2. Quotes to Scrape | score=6.0506 | terms=good:1, friends:2 | https://quotes.toscrape.com/page/6/
 ```
 
-## Extra CLI Commands
+Running `build` with default settings performs a live crawl and waits at least 6 seconds between requests after the first request. The committed `data/index.json` was generated from a full polite crawl of 10 pages on 2026-05-14 and contains 849 unique terms.
 
-The shell also supports:
-
-```text
-help
-exit
-quit
-```
-
-These are provided for usability; the coursework-required commands remain `build`, `load`, `print`, and `find`.
-
-## Development Smoke Tests
-
-For a quick live smoke test without waiting for a full crawl:
+For a short development smoke test:
 
 ```bash
 PYTHONPATH=src python src/main.py --index-path data/dev-smoke-index.json --max-pages 1 --politeness-delay 0
 ```
 
-Then run:
+The zero-delay option is for development only; the default remains coursework-compliant.
 
-```text
-build
-print good
-find life
-exit
+## Architecture
+
+```mermaid
+flowchart TD
+    CLI[src/main.py CLI shell] --> Crawler[src/crawler.py]
+    Crawler --> Documents[Document objects]
+    Documents --> Indexer[src/indexer.py]
+    Indexer --> IndexFile[data/index.json]
+    IndexFile --> Loader[load_index]
+    Loader --> Search[src/search.py]
+    Indexer --> Search
+    Search --> CLI
 ```
 
-The `--politeness-delay 0` option is intended for development only. The default remains compliant with the coursework requirement.
+Core modules:
 
-## Design Overview
+- `src/crawler.py`: requests pages, applies politeness, extracts text, follows pagination.
+- `src/indexer.py`: tokenises documents, builds the inverted index, saves/loads JSON.
+- `src/search.py`: formats posting lists, finds pages, ranks results.
+- `src/main.py`: interactive command shell.
 
-### Crawler
+## Data Model
 
-The crawler uses `requests` and Beautiful Soup. It extracts quote text, author names, and tags from each quote card, then follows the site's pagination links. It records recoverable request errors instead of crashing. The default `CrawlConfig` enforces a 6-second politeness delay between live requests.
-
-### Inverted Index
-
-The index maps each token to each page where it appears:
+Inverted index shape:
 
 ```python
 {
@@ -179,7 +112,7 @@ The index maps each token to each page where it appears:
 }
 ```
 
-Page-level statistics are stored separately:
+Page statistics are stored separately:
 
 ```python
 {
@@ -191,23 +124,29 @@ Page-level statistics are stored separately:
 }
 ```
 
-Building the index is `O(total_terms)` because each token is processed once.
+## Search Behaviour
 
-### Search
+Queries use the same tokenisation as indexing. Multi-word queries use AND semantics, so `find good friends` returns only pages containing both terms.
 
-Queries reuse the same tokenisation rules as indexing. Multi-word queries use AND semantics, so `find good friends` returns pages containing both `good` and `friends`.
-
-Results are scored with:
+Ranking uses:
 
 ```text
 term_frequency * (ln((document_count + 1) / (document_frequency + 1)) + 1)
 ```
 
-Scores for all query terms are added together. Ties are ordered by URL for deterministic output.
+Scores are summed across query terms and rounded to four decimal places for stable output.
 
-## Testing
+## Complexity
 
-Run the full quality gate:
+- Crawling is `O(number_of_pages)` requests and is dominated by the 6-second politeness delay.
+- Indexing is `O(total_terms)` because each token is processed once.
+- Looking up `print <word>` is average `O(1)` for the term dictionary lookup plus `O(matching_pages)` to display postings.
+- `find <query terms>` intersects posting lists for the query terms, then ranks candidate pages.
+- Saved index size is proportional to the number of unique term-page pairs plus stored positions.
+
+## Testing And Quality
+
+Run the same checks as CI:
 
 ```bash
 ruff check .
@@ -215,40 +154,16 @@ ruff format --check .
 pytest --cov=src --cov-report=term-missing --cov-fail-under=85
 ```
 
-Current local result at the time of writing:
+Current local result:
 
 ```text
 44 passed
 coverage: 98.78%
 ```
 
-Test coverage includes:
-
-- Tokenisation and punctuation handling.
-- Inverted index frequencies and positions.
-- JSON save/load round trips.
-- Missing, corrupt, and invalid index files.
-- Single-word and multi-word search.
-- TF-IDF-style ranking.
-- CLI command parsing and validation.
-- End-to-end shell build/load/print/find flow with fake crawler data.
-- Crawler pagination, politeness, timeouts, HTTP errors, and external links using mocked HTTP responses.
-- Synthetic corpus indexing/searching.
-
-## Continuous Integration
-
-GitHub Actions runs on pushes to project branches and pull requests into `main`.
-
-The CI workflow checks:
-
-- Dependency installation.
-- Ruff linting.
-- Ruff formatting.
-- Pytest with coverage threshold `85%`.
+The test suite covers tokenisation, indexing, storage, corrupt index handling, search ranking, CLI flows, mocked crawler behaviour, and synthetic corpus search. Live crawling is kept out of CI so tests remain fast and deterministic.
 
 ## Documentation
-
-Additional design notes:
 
 - [Crawler design](docs/crawler-design.md)
 - [Indexing design](docs/indexing-design.md)
@@ -256,37 +171,22 @@ Additional design notes:
 - [CLI design](docs/cli-design.md)
 - [Quality checklist](docs/quality-checklist.md)
 
-## GenAI Declaration
+## References
 
-This project was developed with assistance from OpenAI Codex/ChatGPT. GenAI was used for interpreting the brief, planning the roadmap, suggesting implementation structure, generating and refining tests, debugging failures, and improving documentation.
-
-All generated code and suggestions were reviewed, tested, and modified as needed. Specific examples for critical reflection include:
-
-- The project roadmap was derived from the coursework mark scheme so development produced evidence for testing, CI, documentation, version control, and the final video.
-- An early squash merge reduced commit visibility on `main`; this was identified and the workflow changed to normal merge commits for later PRs.
-- AI-assisted implementation was validated through unit tests, integration tests, mocked crawler tests, live smoke tests, and GitHub Actions.
-- Mocked tests made crawler behaviour fast and deterministic, but live smoke tests were still needed to check the real target website.
-
-The final video demonstration should include a critical evaluation of how GenAI helped and where its suggestions required human checking.
+- Requests documentation: https://requests.readthedocs.io/
+- Beautiful Soup documentation: https://www.crummy.com/software/BeautifulSoup/bs4/doc/
+- Target website: https://quotes.toscrape.com/
+- University module material on crawling, indexing, and search ranking.
 
 ## Known Limitations
 
-- Automated tests do not depend on the live website, so live availability is verified separately with smoke tests.
-- The CLI is intentionally text-based because the brief requires a command-line interface.
-- Query processing uses AND semantics for multi-word queries.
-- Ranking is TF-IDF-style but intentionally compact and explainable for coursework scope.
+- Automated tests use mocked HTTP rather than the live site.
+- Query processing uses AND semantics rather than phrase matching.
+- Ranking is intentionally compact and explainable rather than a production search-engine pipeline.
 
 ## Submission Notes
 
-The compiled index file is included at:
-
-```text
-data/index.json
-```
-
-Before submitting, check:
-
-- The final video link is accessible in an incognito/private browser.
-- The GitHub repository is public or accessible to markers.
-- `data/index.json` is included in the repository and/or attached via Minerva.
-- The video is under 5 minutes and covers live demo, design, testing, Git workflow, and GenAI reflection.
+- Compiled index: `data/index.json`
+- Main entry point: `src/main.py`
+- CI workflow: `.github/workflows/ci.yml`
+- The final video should demonstrate `build`, `load`, `print`, `find`, tests, Git/CI, and the required GenAI critical reflection.
