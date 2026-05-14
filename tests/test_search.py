@@ -3,8 +3,11 @@ from pytest import approx
 from src.indexer import Document, build_index
 from src.search import (
     SearchResult,
+    TermContribution,
+    explain_query,
     find_pages,
     format_postings,
+    format_search_explanation,
     format_search_results,
     parse_query_terms,
     suggest_terms,
@@ -227,6 +230,51 @@ def test_format_search_results_for_matches() -> None:
 
 def test_format_search_results_for_no_matches() -> None:
     assert format_search_results([]) == ["No matching pages found."]
+
+
+def test_explain_query_returns_top_result_score_breakdown() -> None:
+    search_index = sample_index()
+
+    explanation = explain_query(search_index, "good friends")
+
+    assert explanation is not None
+    assert explanation.result.url == "https://quotes.toscrape.com/page/1/"
+    assert explanation.term_contributions == (
+        TermContribution(
+            term="good",
+            term_frequency=3,
+            document_frequency=1,
+            document_count=3,
+            inverse_document_frequency=1.6931,
+            contribution=5.0794,
+        ),
+        TermContribution(
+            term="friends",
+            term_frequency=1,
+            document_frequency=2,
+            document_count=3,
+            inverse_document_frequency=1.2877,
+            contribution=1.2877,
+        ),
+    )
+
+
+def test_format_search_explanation_for_match() -> None:
+    search_index = sample_index()
+    explanation = explain_query(search_index, "good friends")
+
+    assert format_search_explanation(explanation) == [
+        "Top result: Quotes Page 1 | score=6.3671 | "
+        "https://quotes.toscrape.com/page/1/",
+        "Score breakdown:",
+        "  good: tf=3, df=1/3, idf=1.6931, contribution=5.0794",
+        "  friends: tf=1, df=2/3, idf=1.2877, contribution=1.2877",
+        "Formula: score = sum(term_frequency * inverse_document_frequency)",
+    ]
+
+
+def test_format_search_explanation_for_no_match() -> None:
+    assert format_search_explanation(None) == ["No matching pages found."]
 
 
 def test_suggest_terms_finds_close_misspellings() -> None:

@@ -101,6 +101,13 @@ def test_load_print_and_find_commands(tmp_path) -> None:
         "No matching pages found.",
         "Did you mean: friends?",
     ]
+    assert shell.execute("explain good friends") == [
+        "Top result: Quotes to Scrape | score=3.0000 | " "https://quotes.toscrape.com/",
+        "Score breakdown:",
+        "  good: tf=2, df=1/1, idf=1.0000, contribution=2.0000",
+        "  friends: tf=1, df=1/1, idf=1.0000, contribution=1.0000",
+        "Formula: score = sum(term_frequency * inverse_document_frequency)",
+    ]
 
 
 def test_search_commands_require_loaded_index(tmp_path) -> None:
@@ -110,6 +117,9 @@ def test_search_commands_require_loaded_index(tmp_path) -> None:
         "No index loaded. Run 'build' or 'load' first."
     ]
     assert shell.execute("find good") == [
+        "No index loaded. Run 'build' or 'load' first."
+    ]
+    assert shell.execute("explain good") == [
         "No index loaded. Run 'build' or 'load' first."
     ]
 
@@ -123,6 +133,7 @@ def test_command_validation_and_help(tmp_path) -> None:
     assert not shell.should_exit("help")
     assert shell.execute("print") == ["Usage: print <word>"]
     assert shell.execute("find") == ["Usage: find <query terms>"]
+    assert shell.execute("explain") == ["Usage: explain <query terms>"]
     assert shell.execute("unknown") == [
         "Unknown command 'unknown'. Type 'help' for available commands."
     ]

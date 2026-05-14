@@ -55,6 +55,17 @@ Scores for each query term are added together. This means:
 
 The implementation rounds scores to four decimal places for stable command-line output and predictable tests.
 
+## Score Explanation
+
+The optional `explain <query>` command reuses the same search path as `find`, then expands the highest-ranked result into score components:
+
+- term frequency on the page;
+- document frequency across the index;
+- inverse document frequency;
+- per-term contribution to the final score.
+
+This is a small search-insight extension. It makes the ranking transparent without changing the required `find` command or adding a separate scoring model.
+
 ## Complexity
 
 For a query with `q` unique terms, candidate page discovery intersects posting lists for those terms. In the usual case, this is proportional to the combined size of the relevant posting lists rather than the number of all indexed words.
