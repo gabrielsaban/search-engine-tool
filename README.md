@@ -157,6 +157,26 @@ Scores are summed across query terms and rounded to four decimal places for stab
 - `find <query terms>` intersects posting lists for the query terms, then ranks candidate pages.
 - Saved index size is proportional to the number of unique term-page pairs plus stored positions.
 
+## Benchmarking
+
+Run a benchmark against the committed index without live crawling:
+
+```bash
+PYTHONPATH=src python3 benchmarks/search_benchmark.py --source saved
+```
+
+Run a deterministic synthetic benchmark that times tokenisation, index building, and representative queries:
+
+```bash
+PYTHONPATH=src python3 benchmarks/search_benchmark.py \
+  --source synthetic \
+  --documents 500 \
+  --terms-per-document 120 \
+  --vocabulary-size 1000
+```
+
+The benchmark reports document count, unique terms, posting count, stored positions, JSON index size, index/load timing, and per-query latency. Use `--query "<query>"` multiple times to benchmark custom searches.
+
 ## Testing And Quality
 
 Run the same checks as CI:
@@ -170,11 +190,11 @@ pytest --cov=src --cov-report=term-missing --cov-fail-under=85
 Current local result:
 
 ```text
-51 passed
+60 passed
 coverage: 96.40%
 ```
 
-The test suite covers tokenisation, indexing, storage, corrupt index handling, search ranking, CLI flows, mocked crawler behaviour, and synthetic corpus search. Live crawling is kept out of CI so tests remain fast and deterministic.
+The test suite covers tokenisation, indexing, storage, corrupt index handling, search ranking, CLI flows, mocked crawler behaviour, benchmark helpers, and synthetic corpus search. Live crawling is kept out of CI so tests remain fast and deterministic.
 
 ## Documentation
 
@@ -182,6 +202,7 @@ The test suite covers tokenisation, indexing, storage, corrupt index handling, s
 - [Indexing design](docs/indexing-design.md)
 - [Search design](docs/search-design.md)
 - [Search research and rationale](docs/SEARCH_RESEARCH.md)
+- [Benchmarking notes](docs/BENCHMARKING.md)
 - [CLI design](docs/cli-design.md)
 - [Quality checklist](docs/quality-checklist.md)
 
