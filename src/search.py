@@ -79,21 +79,30 @@ def format_postings(search_index: SearchIndex, word: str) -> list[str]:
 
 def find_pages(search_index: SearchIndex, query: str) -> list[SearchResult]:
     """Find pages containing all query terms."""
-    query_clause = parse_query_clause(query)
-    terms = list(query_clause.all_terms)
-    if not terms:
-        return []
+    query_clauses = parse_query(query)
+    results_by_url: dict[str, SearchResult] = {}
 
-    candidate_urls = _candidate_urls(search_index, terms)
-    phrase_matched_urls = {
-        url
-        for url in candidate_urls
-        if _matches_all_phrases(search_index, url, query_clause.phrases)
-    }
-    results = [
-        _build_search_result(search_index, url, terms) for url in phrase_matched_urls
-    ]
-    return sorted(results, key=lambda result: (-result.score, result.url))
+    for query_clause in query_clauses:
+        terms = list(query_clause.all_terms)
+        if not terms:
+            continue
+
+        candidate_urls = _candidate_urls(search_index, terms)
+        phrase_matched_urls = {
+            url
+            for url in candidate_urls
+            if _matches_all_phrases(search_index, url, query_clause.phrases)
+        }
+
+        for url in phrase_matched_urls:
+            result = _build_search_result(search_index, url, terms)
+            existing_result = results_by_url.get(url)
+            if existing_result is None or result.score > existing_result.score:
+                results_by_url[url] = result
+
+    return sorted(
+        results_by_url.values(), key=lambda result: (-result.score, result.url)
+    )
 
 
 def format_search_results(results: list[SearchResult]) -> list[str]:
@@ -116,6 +125,54 @@ def format_search_results(results: list[SearchResult]) -> list[str]:
 
 def _unique_terms(terms: list[str]) -> list[str]:
     return list(dict.fromkeys(terms))
+
+
+def parse_query(query: str) -> list[QueryClause]:
+    """Parse a query into OR-separated clauses."""
+    return [
+        parse_query_clause(part) for part in _split_or_clauses(query) if part.strip()
+    ]
+
+
+def _split_or_clauses(query: str) -> list[str]:
+    clauses = []
+    current_clause = []
+    current_word = []
+    in_quote = False
+    index = 0
+
+    while index < len(query):
+        character = query[index]
+        if character == '"':
+            in_quote = not in_quote
+            current_word.append(character)
+            index += 1
+            continue
+
+        if not in_quote and character.isspace():
+            word = "".join(current_word)
+            if word.lower() == "or":
+                clauses.append("".join(current_clause).strip())
+                current_clause = []
+            else:
+                current_clause.append(word)
+                current_clause.append(character)
+            current_word = []
+            index += 1
+            continue
+
+        current_word.append(character)
+        index += 1
+
+    word = "".join(current_word)
+    if word.lower() == "or":
+        clauses.append("".join(current_clause).strip())
+        current_clause = []
+    else:
+        current_clause.append(word)
+
+    clauses.append("".join(current_clause).strip())
+    return clauses
 
 
 def _remove_quoted_phrases(query: str) -> str:
@@ -176,8 +233,7 @@ def _matches_phrase(
 
     first_term_positions = search_index.inverted_index[phrase[0]][url]["positions"]
     following_positions = [
-        set(search_index.inverted_index[term][url]["positions"])
-        for term in phrase[1:]
+        set(search_index.inverted_index[term][url]["positions"]) for term in phrase[1:]
     ]
 
     return any(

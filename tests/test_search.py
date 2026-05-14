@@ -130,6 +130,46 @@ def test_find_pages_handles_phrase_case_and_punctuation() -> None:
     )
 
 
+def test_find_pages_supports_explicit_or_queries() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, "indifference OR friends") == [
+        SearchResult(
+            url="https://quotes.toscrape.com/page/3/",
+            title="Quotes Page 3",
+            score=1.6931,
+            matched_terms=("indifference",),
+            term_frequencies={"indifference": 1},
+        ),
+        SearchResult(
+            url="https://quotes.toscrape.com/page/1/",
+            title="Quotes Page 1",
+            score=1.2877,
+            matched_terms=("friends",),
+            term_frequencies={"friends": 1},
+        ),
+        SearchResult(
+            url="https://quotes.toscrape.com/page/2/",
+            title="Quotes Page 2",
+            score=1.2877,
+            matched_terms=("friends",),
+            term_frequencies={"friends": 1},
+        ),
+    ]
+
+
+def test_find_pages_supports_or_with_phrases() -> None:
+    search_index = sample_index()
+
+    assert [
+        result.url
+        for result in find_pages(search_index, '"good friends" OR indifference')
+    ] == [
+        "https://quotes.toscrape.com/page/1/",
+        "https://quotes.toscrape.com/page/3/",
+    ]
+
+
 def test_find_pages_orders_results_by_score_then_url() -> None:
     search_index = sample_index()
 
