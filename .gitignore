@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local coursework brief and non-submission reference PDFs
+docs/*.pdf
