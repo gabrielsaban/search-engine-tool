@@ -6,9 +6,27 @@ import re
 from dataclasses import dataclass
 from json import dump, load
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict, cast
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+(?:'[a-z0-9]+)?")
+
+
+class Posting(TypedDict):
+    """Statistics for one word on one page."""
+
+    frequency: int
+    positions: list[int]
+
+
+class PageStats(TypedDict):
+    """Summary statistics for one indexed page."""
+
+    title: str
+    total_terms: int
+    unique_terms: int
+
+
+InvertedIndex = dict[str, dict[str, Posting]]
 
 
 @dataclass(frozen=True)
@@ -24,8 +42,8 @@ class Document:
 class SearchIndex:
     """Inverted index plus page-level statistics."""
 
-    inverted_index: dict[str, dict[str, dict[str, list[int] | int]]]
-    pages: dict[str, dict[str, int | str]]
+    inverted_index: InvertedIndex
+    pages: dict[str, PageStats]
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the index into a JSON-serialisable dictionary."""
@@ -38,8 +56,8 @@ class SearchIndex:
     def from_dict(cls, payload: dict[str, Any]) -> SearchIndex:
         """Recreate a search index from a decoded JSON payload."""
         return cls(
-            inverted_index=payload["inverted_index"],
-            pages=payload["pages"],
+            inverted_index=cast(InvertedIndex, payload["inverted_index"]),
+            pages=cast(dict[str, PageStats], payload["pages"]),
         )
 
 
@@ -50,8 +68,8 @@ def tokenize(text: str) -> list[str]:
 
 def build_index(documents: list[Document]) -> SearchIndex:
     """Build an inverted index in O(total terms) time."""
-    inverted_index: dict[str, dict[str, dict[str, list[int] | int]]] = {}
-    pages: dict[str, dict[str, int | str]] = {}
+    inverted_index: InvertedIndex = {}
+    pages: dict[str, PageStats] = {}
 
     for document in documents:
         tokens = tokenize(document.text)
@@ -65,10 +83,7 @@ def build_index(documents: list[Document]) -> SearchIndex:
             postings = inverted_index.setdefault(token, {})
             posting = postings.setdefault(
                 document.url,
-                {
-                    "frequency": 0,
-                    "positions": [],
-                },
+                Posting(frequency=0, positions=[]),
             )
             posting["frequency"] += 1
             posting["positions"].append(position)
