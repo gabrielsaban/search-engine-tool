@@ -7,6 +7,7 @@ from search import (
     format_postings,
     format_search_results,
     parse_query_terms,
+    suggest_terms,
 )
 
 
@@ -102,6 +103,74 @@ def test_find_pages_uses_and_semantics_for_multi_word_queries() -> None:
     assert result[0].score == approx(6.3671, abs=0.0001)
 
 
+def test_find_pages_matches_quoted_phrases_using_positions() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, '"good friends"') == [
+        SearchResult(
+            url="https://quotes.toscrape.com/page/1/",
+            title="Quotes Page 1",
+            score=6.3671,
+            matched_terms=("good", "friends"),
+            term_frequencies={"good": 3, "friends": 1},
+        )
+    ]
+
+
+def test_find_pages_rejects_phrase_terms_that_are_not_adjacent() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, '"friends good"') == []
+
+
+def test_find_pages_handles_phrase_case_and_punctuation() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, '"GOOD, friends!"')[0].url == (
+        "https://quotes.toscrape.com/page/1/"
+    )
+
+
+def test_find_pages_supports_explicit_or_queries() -> None:
+    search_index = sample_index()
+
+    assert find_pages(search_index, "indifference OR friends") == [
+        SearchResult(
+            url="https://quotes.toscrape.com/page/3/",
+            title="Quotes Page 3",
+            score=1.6931,
+            matched_terms=("indifference",),
+            term_frequencies={"indifference": 1},
+        ),
+        SearchResult(
+            url="https://quotes.toscrape.com/page/1/",
+            title="Quotes Page 1",
+            score=1.2877,
+            matched_terms=("friends",),
+            term_frequencies={"friends": 1},
+        ),
+        SearchResult(
+            url="https://quotes.toscrape.com/page/2/",
+            title="Quotes Page 2",
+            score=1.2877,
+            matched_terms=("friends",),
+            term_frequencies={"friends": 1},
+        ),
+    ]
+
+
+def test_find_pages_supports_or_with_phrases() -> None:
+    search_index = sample_index()
+
+    assert [
+        result.url
+        for result in find_pages(search_index, '"good friends" OR indifference')
+    ] == [
+        "https://quotes.toscrape.com/page/1/",
+        "https://quotes.toscrape.com/page/3/",
+    ]
+
+
 def test_find_pages_orders_results_by_score_then_url() -> None:
     search_index = sample_index()
 
@@ -158,3 +227,15 @@ def test_format_search_results_for_matches() -> None:
 
 def test_format_search_results_for_no_matches() -> None:
     assert format_search_results([]) == ["No matching pages found."]
+
+
+def test_suggest_terms_finds_close_misspellings() -> None:
+    search_index = sample_index()
+
+    assert suggest_terms(search_index, "freinds") == ["friends"]
+
+
+def test_suggest_terms_ignores_known_terms() -> None:
+    search_index = sample_index()
+
+    assert suggest_terms(search_index, "friends") == []

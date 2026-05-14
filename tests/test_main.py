@@ -97,6 +97,10 @@ def test_load_print_and_find_commands(tmp_path) -> None:
         "1. Quotes to Scrape | score=3.0000 | "
         "terms=good:2, friends:1 | https://quotes.toscrape.com/"
     ]
+    assert shell.execute("find freinds") == [
+        "No matching pages found.",
+        "Did you mean: friends?",
+    ]
 
 
 def test_search_commands_require_loaded_index(tmp_path) -> None:

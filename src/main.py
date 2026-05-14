@@ -9,7 +9,7 @@ from pathlib import Path
 
 from crawler import CrawlConfig, CrawlResult, crawl_site
 from indexer import IndexLoadError, SearchIndex, build_index, load_index, save_index
-from search import find_pages, format_postings, format_search_results
+from search import find_pages, format_postings, format_search_results, suggest_terms
 
 DEFAULT_INDEX_PATH = Path("data/index.json")
 
@@ -106,7 +106,15 @@ class SearchShell:
         if self.search_index is None:
             return ["No index loaded. Run 'build' or 'load' first."]
 
-        return format_search_results(find_pages(self.search_index, arguments))
+        results = find_pages(self.search_index, arguments)
+        lines = format_search_results(results)
+
+        if not results:
+            suggestions = suggest_terms(self.search_index, arguments)
+            if suggestions:
+                lines.append(f"Did you mean: {', '.join(suggestions)}?")
+
+        return lines
 
     def _help(self) -> list[str]:
         return [
@@ -115,6 +123,7 @@ class SearchShell:
             "  load              Load the saved index from disk.",
             "  print <word>      Print the posting list for a word.",
             "  find <query>      Find pages containing all query terms.",
+            '                    Supports phrases like "good friends" and OR.',
             "  help              Show this help text.",
             "  exit              Leave the shell.",
         ]
