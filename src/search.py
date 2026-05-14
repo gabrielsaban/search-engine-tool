@@ -53,10 +53,7 @@ def find_pages(search_index: SearchIndex, query: str) -> list[SearchResult]:
         return []
 
     candidate_urls = _candidate_urls(search_index, terms)
-    results = [
-        _build_search_result(search_index, url, terms)
-        for url in candidate_urls
-    ]
+    results = [_build_search_result(search_index, url, terms) for url in candidate_urls]
     return sorted(results, key=lambda result: (-result.score, result.url))
 
 
@@ -68,8 +65,7 @@ def format_search_results(results: list[SearchResult]) -> list[str]:
     lines = []
     for position, result in enumerate(results, start=1):
         term_summary = ", ".join(
-            f"{term}:{result.term_frequencies[term]}"
-            for term in result.matched_terms
+            f"{term}:{result.term_frequencies[term]}" for term in result.matched_terms
         )
         lines.append(
             f"{position}. {result.title} | score={result.score:.4f} "
@@ -105,8 +101,7 @@ def _build_search_result(
     terms: list[str],
 ) -> SearchResult:
     term_frequencies = {
-        term: search_index.inverted_index[term][url]["frequency"]
-        for term in terms
+        term: search_index.inverted_index[term][url]["frequency"] for term in terms
     }
     score = _score_result(search_index, term_frequencies)
     page = search_index.pages[url]
@@ -129,9 +124,9 @@ def _score_result(
 
     for term, term_frequency in term_frequencies.items():
         document_frequency = len(search_index.inverted_index[term])
-        inverse_document_frequency = log(
-            (document_count + 1) / (document_frequency + 1)
-        ) + 1
+        inverse_document_frequency = (
+            log((document_count + 1) / (document_frequency + 1)) + 1
+        )
         score += term_frequency * inverse_document_frequency
 
     return round(score, 4)
