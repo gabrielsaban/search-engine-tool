@@ -76,6 +76,12 @@ def test_extract_next_url_returns_none_without_next_link() -> None:
     assert extract_next_url("https://quotes.toscrape.com/page/2/", PAGE_TWO) is None
 
 
+def test_extract_next_url_returns_none_for_empty_href() -> None:
+    html = '<html><body><li class="next"><a href="">Next</a></li></body></html>'
+
+    assert extract_next_url("https://quotes.toscrape.com/", html) is None
+
+
 @responses.activate
 def test_crawl_site_follows_pagination_and_respects_politeness() -> None:
     responses.add(
@@ -162,7 +168,7 @@ def test_crawl_site_can_limit_pages_for_development_runs() -> None:
 
 @responses.activate
 def test_crawl_site_skips_external_pagination_links() -> None:
-    html = PAGE_ONE.replace('/page/2/', "https://example.com/page/2/")
+    html = PAGE_ONE.replace("/page/2/", "https://example.com/page/2/")
     responses.add(
         responses.GET,
         "https://quotes.toscrape.com/",
