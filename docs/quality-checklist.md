@@ -59,6 +59,13 @@ PYTHONPATH=src python src/main.py
 
 Then run `build` and allow the crawler to wait at least 6 seconds between page requests.
 
+Latest live smoke result:
+
+- Ran the CLI against the live website with `--max-pages 2` and the default 6-second politeness delay.
+- `build` crawled 2 pages and saved an index.
+- `load` loaded the saved index successfully.
+- `find indifference` returned a page 2 match.
+
 ## Known Limitations
 
 - Automated crawler tests use mocked HTML and therefore do not prove the live site is available.
