@@ -287,6 +287,232 @@ Acceptance criteria:
 - The video can be delivered under 5 minutes without rushing.
 - GenAI use is declared honestly and critically.
 
+## Outstanding-Band Implementation Plan
+
+The following milestones are the remaining active development plan for targeting the excellent-to-outstanding grading band. They are intentionally scoped so each extension can be tested, documented, and explained, rather than added as superficial feature count.
+
+## Milestone 8: Advanced Query Processing
+
+Branch: `feat/advanced-query-processing`
+
+Purpose:
+
+Move the search behaviour from "very good" toward "excellent" by adding advanced query features that remain explainable in the video. This is an active implementation stage, not a wishlist.
+
+Implementation tasks:
+
+- Add quoted phrase search, for example `find "good friends"`.
+- Use stored token positions to verify adjacent phrase matches.
+- Add explicit OR query support with documented syntax.
+- Add query suggestions for unknown terms using edit distance or close-prefix matches.
+- Keep default multi-term behaviour as AND semantics unless explicitly changed by query syntax.
+- Document query grammar and examples in README and search design notes.
+
+Testing tasks:
+
+- Phrase present on one page.
+- Phrase terms present but not adjacent.
+- Phrase with punctuation/case variation.
+- Unknown term suggestions.
+- Combined normal term and phrase query.
+- Regression tests proving existing `find good friends` behaviour still works.
+
+Acceptance criteria:
+
+- Phrase search uses the existing positional index rather than ad hoc substring search.
+- Query parsing is deterministic and documented.
+- CLI output remains short and readable.
+- Tests cover successful, unsuccessful, and edge-case queries.
+
+Full-marks evidence:
+
+- Demonstrates advanced query processing beyond the minimum brief.
+- Shows direct use of stored word positions, strengthening the indexing design justification.
+
+## Milestone 9: Search Algorithm Research And Rationale
+
+Branch: `docs/search-research`
+
+Purpose:
+
+Provide explicit evidence of research into search-engine algorithms and modern practices.
+
+Documentation tasks:
+
+- Add `docs/SEARCH_RESEARCH.md`.
+- Explain inverted indexes, posting lists, term frequency, document frequency, TF-IDF, Boolean retrieval, phrase queries, and optional stemming/stopword trade-offs.
+- Compare implemented choices against alternatives such as PageRank, BM25, stemming, stopword removal, skip pointers, concurrent crawling, and compressed indexes.
+- Explain why some advanced options are included and others are rejected for this small, polite-crawled corpus.
+- Add references to module material, Requests, Beautiful Soup, Porter stemming, TF-IDF/BM25 background, and robots.txt/RFC material where relevant.
+
+Acceptance criteria:
+
+- Research notes are concise enough to read but technical enough to support an outstanding-band claim.
+- Every advanced feature in the README is backed by implementation or explicitly described as a rejected alternative.
+- The video can reference one or two research-informed trade-offs without getting lost.
+
+Full-marks evidence:
+
+- Clear design rationale rather than feature accumulation.
+- Shows awareness of search-engine concepts beyond the required implementation.
+
+## Milestone 10: Benchmarking And Complexity Evidence
+
+Branch: `feat/benchmarking`
+
+Purpose:
+
+Turn the existing complexity notes into measured evidence.
+
+Implementation tasks:
+
+- Add a `benchmarks/` directory.
+- Add a benchmark script that can:
+  - Build or load an index.
+  - Time tokenisation/indexing over synthetic corpora.
+  - Time representative queries.
+  - Report document count, unique terms, index size, and query latency.
+- Ensure benchmark runs can skip live crawling by using the committed index or generated synthetic documents.
+- Add benchmark instructions to README.
+
+Testing tasks:
+
+- Unit test benchmark helper functions without asserting machine-specific timings.
+- Ensure benchmark script has `--help`.
+- Keep benchmark out of normal CI timing assertions unless it is stable and quick.
+
+Acceptance criteria:
+
+- Benchmark output is reproducible enough to cite in docs/video.
+- Complexity claims in README/docs are supported by examples.
+- No benchmark requires violating politeness or live-site reliability.
+
+Full-marks evidence:
+
+- Supports the "highly optimised algorithms with complexity analysis and benchmarking" expectation.
+
+## Milestone 11: Professional Static Quality
+
+Branch: `chore/static-quality`
+
+Purpose:
+
+Raise the project from good Python coursework to a more professional open-source style.
+
+Implementation tasks:
+
+- Add `mypy` or `pyright` type checking if compatible with the current simple module layout.
+- Add stricter Ruff rules where they improve clarity without causing churn.
+- Consider a package layout only if it improves imports without conflicting with the brief's required `src/*.py` structure.
+- Add docstrings where public functions/classes still need explanation.
+- Review exception types and error messages for consistency.
+
+Testing/CI tasks:
+
+- Add static type checking to GitHub Actions.
+- Keep local quality command documented.
+- Ensure the CI runtime remains reasonable.
+
+Acceptance criteria:
+
+- Static analysis passes in CI.
+- Type hints help explain the code rather than creating noisy ceremony.
+- README quality commands match CI exactly.
+
+Full-marks evidence:
+
+- Supports "publication-quality code" and "professional-grade automated testing pipeline".
+
+## Milestone 12: Release And Submission Evidence
+
+Branch: `release/v1.0.0`
+
+Purpose:
+
+Create clear final-submission evidence without rushing the release before the video is ready.
+
+Release tasks:
+
+- Confirm final `data/index.json` was generated from a full polite crawl.
+- Run a final live smoke test using the default 6-second delay.
+- Run full local quality gate and confirm GitHub Actions is green.
+- Create a Git tag such as `v1.0.0` only when the video/demo materials are ready.
+- Draft GitHub release notes summarising features, tests, limitations, and submitted index details.
+- Confirm repository visibility and README links.
+
+Acceptance criteria:
+
+- Final tag exists and points to the exact submitted code.
+- Release notes are concise and accurate.
+- The submitted index file matches the repository's `data/index.json`.
+
+Full-marks evidence:
+
+- Supports "professional Git workflow with semantic commits, tags/releases".
+
+## Milestone 13: Outstanding Video And Reflection Package
+
+Branch: `docs/video-package`
+
+Purpose:
+
+Turn the strong implementation into a strong 5-minute assessment performance.
+
+Documentation tasks:
+
+- Add `docs/video-script.md` with timestamped narration.
+- Add `docs/demo-checklist.md` with exact commands and expected outputs.
+- Add `docs/genai-reflection-notes.md` outside README so the reflection is present but not overloading the public project overview.
+- Include specific GenAI examples:
+  - Roadmap generated from the mark scheme.
+  - Squash-merge issue corrected after review.
+  - Tests used to validate and correct AI-assisted implementation.
+  - Mocked crawler tests paired with live smoke testing.
+- Add a final submission checklist for Minerva.
+
+Acceptance criteria:
+
+- Video script fits under 5 minutes.
+- Demo commands are rehearsed and deterministic.
+- GenAI evaluation is honest, specific, and critical.
+- Reflection does not claim sole manual authorship where AI helped.
+
+Full-marks evidence:
+
+- Directly targets the 10% video and 15% GenAI criteria.
+- Shows understanding, not just generated code.
+
+## Milestone 14: Novel Contribution
+
+Branch: `feat/novel-search-insight`
+
+Purpose:
+
+Add a creative feature that is genuinely useful and explainable, without destabilising the required commands.
+
+Chosen direction:
+
+- Query explanation mode showing why a page ranked first: term frequencies, IDF values, final score.
+- Result snippets with matched terms.
+- Query suggestions for misspelled words with "did you mean" output.
+
+Selection criteria:
+
+- Must build on the existing inverted index rather than bolting on unrelated code.
+- Must be testable.
+- Must be explainable in under 20 seconds in the video.
+- Must not interfere with the four required commands.
+
+Acceptance criteria:
+
+- The novel search-insight feature is implemented, tested, and documented.
+- README describes it briefly as an extension.
+- The final video can mention it as evidence of creative extension after the required commands.
+
+Full-marks evidence:
+
+- Supports "novel contributions or particularly creative solutions" without risking the core coursework requirements.
+
 ## Five-Minute Video Plan
 
 Target timings:
