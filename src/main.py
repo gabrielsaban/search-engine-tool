@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from argparse import ArgumentParser, Namespace
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -115,9 +116,45 @@ class SearchShell:
         ]
 
 
+def build_argument_parser() -> ArgumentParser:
+    """Build the command-line argument parser for shell startup options."""
+    parser = ArgumentParser(description="Search Engine Tool interactive shell")
+    parser.add_argument(
+        "--index-path",
+        type=Path,
+        default=DEFAULT_INDEX_PATH,
+        help="Path used by build/load for the saved index.",
+    )
+    parser.add_argument(
+        "--max-pages",
+        type=int,
+        default=None,
+        help="Optional crawl page limit for development or short demos.",
+    )
+    parser.add_argument(
+        "--politeness-delay",
+        type=float,
+        default=CrawlConfig.politeness_delay,
+        help="Delay in seconds between live requests.",
+    )
+    return parser
+
+
+def create_shell(args: Namespace) -> SearchShell:
+    """Create a shell from parsed startup options."""
+    crawl_config = CrawlConfig(
+        max_pages=args.max_pages,
+        politeness_delay=args.politeness_delay,
+    )
+    return SearchShell(
+        index_path=args.index_path,
+        crawler=lambda: crawl_site(crawl_config),
+    )
+
+
 def main() -> None:
     """Run the interactive search shell."""
-    shell = SearchShell()
+    shell = create_shell(build_argument_parser().parse_args())
     print("Search Engine Tool")
     print("Type 'help' for commands.")
 

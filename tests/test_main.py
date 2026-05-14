@@ -2,7 +2,7 @@ from pathlib import Path
 
 from crawler import CrawlResult
 from indexer import Document
-from main import SearchShell, parse_command
+from main import SearchShell, build_argument_parser, create_shell, parse_command
 
 
 def test_parse_command_splits_command_and_arguments() -> None:
@@ -117,3 +117,20 @@ def test_build_reports_crawl_errors(tmp_path) -> None:
         "No documents were crawled; index was not updated.",
     ]
     assert not Path(index_path).exists()
+
+
+def test_create_shell_uses_startup_options(tmp_path) -> None:
+    args = build_argument_parser().parse_args(
+        [
+            "--index-path",
+            str(tmp_path / "custom.json"),
+            "--max-pages",
+            "1",
+            "--politeness-delay",
+            "0",
+        ]
+    )
+
+    shell = create_shell(args)
+
+    assert shell.index_path == tmp_path / "custom.json"
