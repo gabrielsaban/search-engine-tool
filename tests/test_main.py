@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from crawler import CrawlResult
+import main
+from crawler import CrawlError, CrawlResult
 from indexer import Document
 from main import SearchShell, build_argument_parser, create_shell, parse_command
 
@@ -92,6 +93,10 @@ def test_search_commands_require_loaded_index(tmp_path) -> None:
 def test_command_validation_and_help(tmp_path) -> None:
     shell = SearchShell(index_path=tmp_path / "index.json")
 
+    assert shell.execute("") == []
+    assert shell.execute("exit") == ["Goodbye."]
+    assert shell.should_exit("quit")
+    assert not shell.should_exit("help")
     assert shell.execute("print") == ["Usage: print <word>"]
     assert shell.execute("find") == ["Usage: find <query terms>"]
     assert shell.execute("unknown") == [
@@ -106,7 +111,12 @@ def test_build_reports_crawl_errors(tmp_path) -> None:
     def fake_crawler():
         return CrawlResult(
             documents=[],
-            errors=[],
+            errors=[
+                CrawlError(
+                    url="https://quotes.toscrape.com/",
+                    message="500 Server Error",
+                )
+            ],
             visited_urls=(),
         )
 
@@ -114,6 +124,7 @@ def test_build_reports_crawl_errors(tmp_path) -> None:
 
     assert shell.execute("build") == [
         "Crawled 0 page(s).",
+        "Warning: https://quotes.toscrape.com/ - 500 Server Error",
         "No documents were crawled; index was not updated.",
     ]
     assert not Path(index_path).exists()
@@ -134,3 +145,29 @@ def test_create_shell_uses_startup_options(tmp_path) -> None:
     shell = create_shell(args)
 
     assert shell.index_path == tmp_path / "custom.json"
+
+
+def test_main_loop_prints_output_and_exits(monkeypatch, capsys) -> None:
+    commands = iter(["help", "exit"])
+
+    monkeypatch.setattr("builtins.input", lambda _prompt: next(commands))
+    monkeypatch.setattr("sys.argv", ["main.py"])
+
+    main.main()
+
+    output = capsys.readouterr().out
+    assert "Search Engine Tool" in output
+    assert "Available commands:" in output
+    assert "Goodbye." in output
+
+
+def test_main_loop_handles_eof(monkeypatch, capsys) -> None:
+    def raise_eof(_prompt: str) -> str:
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", raise_eof)
+    monkeypatch.setattr("sys.argv", ["main.py"])
+
+    main.main()
+
+    assert "Search Engine Tool" in capsys.readouterr().out
